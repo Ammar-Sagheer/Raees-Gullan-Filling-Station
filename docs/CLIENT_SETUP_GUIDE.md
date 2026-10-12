@@ -55,8 +55,7 @@ Press save, then repeat for the diesel tank (for example `Diesel Tank`, Diesel,
 `15000`, `6115`, `01/11/2026`).
 
 **Check:** each tank now shows a gauge with the litres you typed. If the
-gauge shows nonsense, edit the tank with the pencil and correct it. You may
-edit a tank freely until the first delivery or reading is saved.
+gauge shows nonsense, edit the tank with the pencil and correct it.
 
 **Do not** type the opening stock as 0 "for now". The month's profit counts
 opening stock, so a wrong figure here makes the whole month's profit wrong.
@@ -114,7 +113,7 @@ Open **Treasury**, press **Record cash**, and enter what is in the safe.
 
 | Field | Example |
 |---|---|
-| Direction | Cash in |
+| Direction | In |
 | Reason | **Already in the safe** |
 | Amount | `450000` |
 | Date | the last day of the old month, `31/10/2026` |
@@ -135,13 +134,13 @@ Skip this if you do not use a bank account for the business.
 
 For each credit customer press **Add customer** and fill in the name and
 phone. If the customer already owes you money, fill in the **opening
-balance**, choose that **they owe you**, and type the amount from your
+balance**, answer **They owe the pump**, and type the amount from your
 register.
 
 | Customer | Opening balance | Direction |
 |---|---|---|
-| Bilal Traders | `85000` | They owe you |
-| Farooq Transport | `0` | none |
+| Bilal Traders | `85000` | They owe the pump |
+| Farooq Transport | `0` | Nothing owed, starting fresh |
 
 **Check:** add up the opening balances. The total must match the total of the
 credit page in your register.
@@ -169,9 +168,9 @@ Skip this if you do not sell oil.
 
 ---
 
-## Step 10. Staff logins (Settings)
+## Step 10. Staff logins (Account)
 
-For every attendant who enters readings: in Settings, add a staff login with
+For every attendant who enters readings: open **Account**, add a staff login with
 their name, email and a password, and leave their role as the staff role. Staff
 can enter readings, deliveries and dips; they cannot see profit, expenses,
 banking or the safe. Only you, the owner, can.
