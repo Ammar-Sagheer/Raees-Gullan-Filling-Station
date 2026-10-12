@@ -14,7 +14,7 @@
 > - The backup panel shows only when the Vercel env var `SHOW_BACKUP=true`.
 >
 > Cut from the master at `4022e72` on 12 Oct 2026 by `scripts/new-client.mjs`
-> (repo `(not given)`). Add each new difference to this list as it is made, and to
+> (repo `Ammar-Sagheer/Raees-Gullan-Filling-Station`). Add each new difference to this list as it is made, and to
 > the master's `docs/CLIENTS.md`. The rest of this file, `README.md` and
 > `docs/` describe the master app and its history (the first pump's), and hold
 > for this one too.
