@@ -1,6 +1,6 @@
 -- =============================================================================
 -- RAEES GULLAN FILLING STATION: the dip charts of its two tanks (needs 075).
--- Run once, after the owner has added his tanks, on his project only.
+-- Run once, after raees-gullan-tanks.sql (or after the owner has added tanks with these two names), on his project only.
 --
 -- From the two charts he supplied:
 --   Diesel Tank: Abdul Waheed Engineering Works, horizontal cylindrical tank,
