@@ -1316,11 +1316,17 @@ export async function createCustomer(_prevState, formData) {
    */
   const openingDirection = text(formData, 'opening_direction');
   const openingAmount = number(formData, 'opening_amount');
+  // The day the balance stood (086). Blank is today, as before.
+  const openingDate = text(formData, 'opening_date');
 
   if (!name) return fail('Enter the customer’s name.');
   if (creditLimit !== null && creditLimit < 0) return fail('The credit limit cannot be negative.');
   if (openingAmount !== null && openingAmount < 0) {
     return fail('Enter the opening balance as a positive figure and pick which way it goes.');
+  }
+
+  if (openingDate && !/^\d{4}-\d{2}-\d{2}$/.test(openingDate)) {
+    return fail('Enter the date the opening balance is as of.');
   }
 
   const opening = openingDirection ? roundRupees(openingAmount ?? 0) : 0;
@@ -1340,6 +1346,7 @@ export async function createCustomer(_prevState, formData) {
     p_credit_limit: creditLimit,
     p_opening_amount: opening,
     p_opening_direction: opening > 0 ? openingDirection : null,
+    p_opening_date: opening > 0 && openingDate ? openingDate : null,
   });
 
   if (error) return fail(describe(error, 'Could not create the customer.'));

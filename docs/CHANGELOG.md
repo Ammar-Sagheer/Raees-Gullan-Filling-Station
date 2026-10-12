@@ -158,6 +158,19 @@ single read.
    and nothing fails until the day an old backup is needed.
 
 
+## A new customer's opening balance can be dated (086, 12 Oct 2026)
+
+Found setting up Al Hakeem to start on 1 October and type the month in after the fact. The
+new-customer form's opening balance was always dated the day it was typed, so on the statement it
+sat below the October slips and the running balance on the earlier days read from zero; the only way
+round was a manual adjustment with a date. The form now has an **As of** box (default today, never
+in the future) and `create_customer_with_opening()` takes `p_opening_date` (null means today, so
+nothing changes for a normal new customer). 086 drops the six-argument function and creates the
+seven-argument one, so a call is never ambiguous. **Run 086 before this deploys:** the form sends the
+new argument. No existing row is touched. Desktop build: migration 086 and `CustomerForm.js` and the
+`createCustomer` action. The Guide's credit-customer step and `docs/CLIENT_SETUP_GUIDE.md` say to use
+the close of the day before the start.
+
 ## Readings opens on the first day still to enter (12 Oct 2026)
 
 Carried from Al Hakeem. With no date in the address, Readings opens on the day after the last day

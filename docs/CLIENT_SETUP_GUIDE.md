@@ -134,8 +134,10 @@ Skip this if you do not use a bank account for the business.
 
 For each credit customer press **Add customer** and fill in the name and
 phone. If the customer already owes you money, fill in the **opening
-balance**, answer **They owe the pump**, and type the amount from your
-register.
+balance**, answer **They owe the pump**, type the amount from your
+register, and set **As of** to the close of the day before you start (30 September
+for a 1 October start). The date matters: it puts the balance above the October
+slips on the customer's statement.
 
 | Customer | Opening balance | Direction |
 |---|---|---|
