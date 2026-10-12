@@ -13,6 +13,7 @@
 >   language switch and every login reads English.
 > - The backup panel shows only when the Vercel env var `SHOW_BACKUP=true`.
 > - `supabase/setup/raees-gullan-tanks.sql`: his two tanks, Petrol Tank 6,695.17 L (SRN chart) and Diesel Tank 15,691 L, opening stock 0; run after `start-empty.sql`, before the charts. He adds nozzles himself.
+> - `supabase/setup/raees-gullan-30sep-1oct.sql`: his forecourt (petrol 25,000 L, diesel two joined tanks 50,000 L, three nozzles, prices) and the first two days of his register (30 Sep and 1 Oct readings and midnight dips), from his register pages; no credit, cash or expenses yet. Run after the charts, with the owner login in place.
 > - `supabase/setup/raees-gullan-dip-charts.sql`: the two tank charts (075), from the paper charts he supplied (diesel: Abdul Waheed Engineering Works, 15,691 L; petrol: SRN Engineering and Iron Febricated, 6,695.17 L). Run after the owner has added tanks called Petrol Tank and Diesel Tank; or load `dip-chart-diesel.csv` and `dip-chart-petrol.csv` from the same folder under Settings -> the tank -> Load dip chart. Three diesel lines misprinted on the paper (165, 1,815 and 2,020 mm) are left out, not corrected; see the file.
 >
 > Cut from the master at `4022e72` on 12 Oct 2026 by `scripts/new-client.mjs`
