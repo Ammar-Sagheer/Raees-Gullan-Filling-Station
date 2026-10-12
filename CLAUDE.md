@@ -12,6 +12,7 @@
 > - **English only**: `OFFER_URDU = false` in `pump-settings.js`, so there is no
 >   language switch and every login reads English.
 > - The backup panel shows only when the Vercel env var `SHOW_BACKUP=true`.
+> - `supabase/setup/raees-gullan-dip-charts.sql`: the two tank charts (075), from the paper charts he supplied (diesel: Abdul Waheed Engineering Works, 15,691 L; petrol: SRN Engineering and Iron Febricated, 6,695.17 L). Run after the owner has added tanks called Petrol Tank and Diesel Tank; or load `dip-chart-diesel.csv` and `dip-chart-petrol.csv` from the same folder under Settings -> the tank -> Load dip chart. Three diesel lines misprinted on the paper (165, 1,815 and 2,020 mm) are left out, not corrected; see the file.
 >
 > Cut from the master at `4022e72` on 12 Oct 2026 by `scripts/new-client.mjs`
 > (repo `(not given)`). Add each new difference to this list as it is made, and to
