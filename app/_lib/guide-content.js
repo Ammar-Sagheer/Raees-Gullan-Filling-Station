@@ -69,6 +69,7 @@ export const GUIDE = {
           title: 'Dip charts, if you have them',
           where: { icon: 'settings', path: 'Settings → Tanks → Load the dip chart' },
           body: 'If the tank company gave you a chart of mm against litres, load it on each tank: choose the Excel or CSV file, or copy the chart and paste it. Every line is shown before you save; check any line the app points at against the printed chart. After that, a dip on that tank is typed in mm and the app reads the litres off the chart. A tank with no chart is dipped in litres.',
+          tip: 'The tank’s starting figure (step 1) is always typed in litres. If the chart is loaded, read the last night’s dip in mm off it to get the litres, and type those under “Fuel in it now”.',
         },
         {
           title: 'Nozzles',
@@ -119,6 +120,7 @@ export const GUIDE = {
           title: 'Check before the first day',
           where: { icon: 'dashboard', path: 'Dashboard' },
           body: 'Both tanks should show the litres you typed, with no negative figure. Then open Readings for the first day: every nozzle’s opening figure must be exactly the meter reading you typed. If one is different, fix that nozzle before entering anything. After the first evening, compare the day’s sales and cash with the paper register to the paisa.',
+          tip: 'The first month’s profit is close, not exact. The fuel already in the tanks on the first day has no delivery behind it in the app, so its cost is estimated from the deliveries you record. From the second month on, the opening stock is stock the app watched arrive, and the profit is exact. Every bill must be entered under Expenses, or the profit looks too high.',
           warn: true,
         },
       ],
@@ -331,6 +333,7 @@ export const GUIDE = {
           title: 'ڈپ چارٹ، اگر آپ کے پاس ہو',
           where: { icon: 'settings', path: 'سیٹنگز ← ٹینک ← ڈپ چارٹ لوڈ کریں' },
           body: 'اگر ٹینک بنانے والی کمپنی نے ملی میٹر اور لٹر کا چارٹ دیا ہے تو اُسے ہر ٹینک پر لوڈ کریں: ایکسل یا CSV فائل منتخب کریں، یا چارٹ کاپی کر کے یہاں چسپاں کر دیں۔ محفوظ کرنے سے پہلے چارٹ کی ہر سطر سامنے آ جاتی ہے؛ جس سطر کی طرف ایپ اشارہ کرے اُسے چھپے ہوئے چارٹ سے ملا لیں۔ اِس کے بعد اُس ٹینک کا ڈپ ملی میٹر میں لکھا جاتا ہے اور لٹر ایپ خود چارٹ سے نکال لیتی ہے۔ جس ٹینک کا چارٹ نہ ہو، اُس کا ڈپ لٹر میں لکھیں۔',
+          tip: 'ٹینک کی ابتدائی مقدار (مرحلہ ۱) ہمیشہ لٹر میں لکھی جاتی ہے۔ اگر چارٹ لوڈ ہو تو آخری رات کا ڈپ ملی میٹر میں چارٹ سے دیکھ کر لٹر نکالیں اور وہی «Fuel in it now» میں لکھیں۔',
         },
         {
           title: 'نوزل',
@@ -381,6 +384,7 @@ export const GUIDE = {
           title: 'پہلے دن سے پہلے جانچ',
           where: { icon: 'dashboard', path: 'ڈیش بورڈ' },
           body: 'دونوں ٹینک وہی لٹر دکھائیں جو آپ نے لکھے تھے، اور کہیں منفی رقم نہ ہو۔ پھر پہلے دن کی ریڈنگ کھولیں: ہر نوزل کی ابتدائی ریڈنگ بالکل وہی ہو جو آپ نے میٹر کی لکھی تھی۔ اگر کوئی مختلف ہو تو کچھ بھی درج کرنے سے پہلے اُس نوزل کو ٹھیک کریں۔ پہلی شام کے بعد دن کی فروخت اور نقد کاغذی رجسٹر سے پائی پائی ملائیں۔',
+          tip: 'پہلے مہینے کا منافع قریب قریب ہوتا ہے، بالکل درست نہیں۔ پہلے دن ٹینکوں میں جو تیل پہلے سے موجود تھا اُس کی ایپ میں کوئی ڈلیوری درج نہیں، اِس لیے اُس کی لاگت آپ کی درج کی ہوئی ڈلیوریوں سے اندازاً نکالی جاتی ہے۔ دوسرے مہینے سے ابتدائی اسٹاک وہ ہوتا ہے جسے ایپ نے آتے دیکھا، اور منافع بالکل درست ہوتا ہے۔ ہر بل «اخراجات» میں درج ہونا ضروری ہے، ورنہ منافع ضرورت سے زیادہ نظر آئے گا۔',
           warn: true,
         },
       ],

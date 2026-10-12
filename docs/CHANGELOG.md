@@ -174,7 +174,7 @@ Written while setting up a new pump (Raees Gullan). The in-app Guide's one-time 
 to add tanks and nozzles but not the things that make the first month's profit right: the date the
 tank's opening stock is "as of", reading the meter off the machine rather than copying the register,
 prices effective from the first day, opening cash in Treasury, bank balances, suppliers, and a check
-before the first day. Each is now a step (twelve instead of nine), in English and Urdu together in
+before the first day. Each is now a step (twelve instead of nine, with a note on the first month's profit being an estimate and on typing a charted tank's opening stock in litres), in English and Urdu together in
 `app/_lib/guide-content.js`, and "Where to begin" says that a new pump presses "Show the steps".
 The same walk-through, with example figures, is `docs/CLIENT_SETUP_GUIDE.md`. Content only, no
 migration; the desktop build takes `guide-content.js` as a file.
