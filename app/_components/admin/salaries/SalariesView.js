@@ -1,0 +1,545 @@
+import Link from 'next/link';
+
+import Button from '@/app/_components/ui/Button';
+import Icon from '@/app/_components/ui/Icon';
+import EmptyState from '@/app/_components/ui/EmptyState';
+import DayHeader from '@/app/_components/admin/dashboard/DayHeader';
+import SectionHeader from '@/app/_components/admin/dashboard/SectionHeader';
+import KpiCard, { KpiGrid } from '@/app/_components/admin/dashboard/KpiCard';
+import Notice from '@/app/_components/admin/dashboard/Notice';
+import AttendanceRegister from '@/app/_components/admin/salaries/AttendanceRegister';
+import {
+  AddStaffButton,
+  CancelPaymentButton,
+  ChangeRateButton,
+  PaySalaryButton,
+  RemoveStaffButton,
+  RestoreStaffButton,
+} from '@/app/_components/admin/salaries/StaffControls';
+
+import { formatDate, formatMonth } from '@/app/_lib/date-helpers';
+import { formatPKR, sumMoney } from '@/app/_lib/format-helpers';
+
+/** "21 days", "20.5 days", "1 day". */
+function days(value) {
+  const n = Number(value ?? 0);
+  return `${Number.isInteger(n) ? n : n.toFixed(1)} ${n === 1 ? 'day' : 'days'}`;
+}
+
+function monthParts(monthStart) {
+  const [year, month] = monthStart.split('-').map(Number);
+  const last = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  return {
+    year,
+    month,
+    label: formatMonth(year, month),
+    end: `${monthStart.slice(0, 8)}${String(last).padStart(2, '0')}`,
+  };
+}
+
+/** The rate in force today: the newest that has started, else the first one. */
+function currentRate(person, today) {
+  const started = person.rates.find((rate) => rate.effective_from <= today);
+  return started ?? person.rates.at(-1) ?? null;
+}
+
+/**
+ * Staff attendance and salaries (074, built first for Al Hakeem), drawn.
+ *
+ * ONE PAGE, IN THE ORDER IT IS USED. The register for the day on screen is on
+ * top, because it is the thing done every day; the month's pay under it, done
+ * once a month; the staff list last, set up once. A staff login sees the
+ * register only.
+ *
+ * ON A PHONE, ONE HALF AT A TIME (below a 44rem container). The owner asked
+ * not to scroll for the Pay button: the register for eight people is a screen
+ * and a half before the salaries begin, and the salaries were a table that
+ * scrolled sideways with Pay at its far edge. So a phone gets an Attendance |
+ * Salaries switch at the top (links, so the choice survives the day arrows),
+ * the three total cards become one strip, and each person is a card with the
+ * figure and one wide "Pay Adnan Rs 5,131" button. A laptop shows everything,
+ * as before.
+ */
+
+/** Hidden below 44rem when this half is not the one chosen on a phone. */
+/**
+ * What has happened to one person's pay this month, and what to do next (804):
+ * every payment (an advance or the one that settled the month) with its date,
+ * note and a way to cancel it, then what is still pending, then Advance and
+ * Pay balance. The same block on the phone's cards and in the table.
+ */
+function PayBlock({ row, month, monthStart, card = false }) {
+  const earned = Number(row.earned);
+  const paid = Number(row.paid);
+  const pending = Number(row.pending);
+  const payments = row.payments ?? [];
+  const canPay = !row.settled && (earned > 0 || paid > 0);
+  const shared = {
+    row,
+    monthStart,
+    monthEnd: month.end,
+    monthLabel: month.label,
+    earnedLabel: formatPKR(row.earned),
+    paidLabel: formatPKR(row.paid),
+    pendingLabel: formatPKR(Math.max(0, pending)),
+    daysLabel: `${days(row.days_worked)} worked: ${row.present} present, ${row.half} half, ${row.absent} absent${
+      Number(row.not_marked) > 0 ? `, ${row.not_marked} not marked` : ''
+    }`,
+    wide: card,
+  };
+
+  return (
+    <div className={card ? 'space-y-3' : 'space-y-2 text-right'}>
+      {payments.length > 0 ? (
+        <ul className="space-y-1.5">
+          {payments.map((payment) => (
+            <li
+              key={payment.id}
+              className={`flex items-start gap-2 ${card ? 'justify-between rounded-xl bg-brand-50 px-4 py-2' : 'justify-end'}`}
+            >
+              <span className={card ? 'min-w-0' : 'text-right'}>
+                <span className="tabular block font-semibold whitespace-nowrap text-brand-700">
+                  <Icon name="check" className="mr-1 inline h-4 w-4 align-[-2px]" />
+                  {payment.is_final ? 'Paid' : 'Advance'} {formatPKR(payment.amount)}
+                </span>
+                <span className="block text-sm text-ink-600">
+                  {formatDate(payment.paid_on)}
+                  {payment.note ? ` · ${payment.note}` : ''}
+                </span>
+              </span>
+              <CancelPaymentButton
+                payment={payment}
+                name={row.name}
+                amountLabel={formatPKR(payment.amount)}
+                asText={card}
+              />
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      {/* The figure the owner asked for: what is still to pay once the advances
+          are taken off. Earned stays as the month's total above it. */}
+      {row.settled ? (
+        <p className="text-sm font-semibold text-brand-800">Month settled</p>
+      ) : pending < 0 ? (
+        <p className="tabular text-base font-bold whitespace-nowrap text-amber-800">
+          Paid ahead {formatPKR(-pending)}
+        </p>
+      ) : earned > 0 || paid > 0 ? (
+        <p className="tabular text-base font-bold whitespace-nowrap text-red-700">
+          {paid > 0 ? 'Pending' : 'To pay'} {formatPKR(pending)}
+        </p>
+      ) : (
+        <p className="text-sm text-ink-600">Nothing earned this month.</p>
+      )}
+
+      {canPay ? (
+        <div className={card ? 'grid gap-2' : 'flex flex-wrap justify-end gap-2'}>
+          {pending > 0 ? <PaySalaryButton {...shared} kind="final" /> : null}
+          <PaySalaryButton {...shared} kind="advance" />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+const PHONE_HIDDEN = 'hidden @[44rem]:block';
+export default function SalariesView({
+  date,
+  today,
+  monthStart,
+  monthParam,
+  staff,
+  attendance,
+  salaries,
+  unpaidLastMonth,
+  lastMonthStart,
+  handTyped = [],
+  isOwner,
+  tab = 'attendance',
+}) {
+  const active = staff.filter((person) => person.is_active);
+  const retired = staff.filter((person) => !person.is_active);
+  const month = monthParts(monthStart);
+  const onSalaries = isOwner && tab === 'salaries';
+  const extraParams = {
+    ...(monthParam ? { month: monthParam } : {}),
+    ...(onSalaries ? { tab: 'salaries' } : {}),
+  };
+  const isFuture = date > today;
+
+  // Summed in whole paisa (sumMoney), from figures Postgres worked out.
+  const earned = sumMoney(salaries.map((row) => row.earned));
+  // Everything paid so far, advances included (804). What is still pending is
+  // worked out per person in Postgres (earned less paid, and nothing once the
+  // month is settled); a person paid ahead counts as nothing pending, not as a
+  // negative that hides what someone else is owed.
+  const paid = sumMoney(salaries.map((row) => row.paid));
+  const toPay = sumMoney(salaries.map((row) => Math.max(0, Number(row.pending))));
+  const unpaidCount = salaries.filter((row) => Number(row.pending) > 0).length;
+
+  const monthHref = (value) =>
+    `/admin/salaries?date=${date}&month=${value.slice(0, 7)}&tab=salaries`;
+  const tabHref = (value) =>
+    `/admin/salaries?date=${date}${monthParam ? `&month=${monthParam}` : ''}${
+      value === 'salaries' ? '&tab=salaries' : ''
+    }`;
+  const lastMonth = lastMonthStart ? monthParts(lastMonthStart) : null;
+
+  const monthPicker = (id, className) => (
+    <form method="GET" action="/admin/salaries" className={className}>
+      <input type="hidden" name="date" value={date} />
+      <input type="hidden" name="tab" value="salaries" />
+      <label className="sr-only" htmlFor={id}>
+        Month
+      </label>
+      <input
+        id={id}
+        type="month"
+        name="month"
+        defaultValue={monthStart.slice(0, 7)}
+        className="input w-auto py-2"
+      />
+      <Button variant="secondary" type="submit">
+        Show
+      </Button>
+    </form>
+  );
+
+  return (
+    <div className="@container">
+      <DayHeader
+        date={date}
+        basePath="/admin/salaries"
+        extraParams={extraParams}
+        title={isOwner ? 'Staff' : 'Staff attendance'}
+        icon="staff"
+      />
+
+      {/* The phone's switch. Owner only: a staff login has the register alone. */}
+      {isOwner ? (
+        <nav aria-label="Show" className="seg mt-4 grid w-full grid-cols-2 @[44rem]:hidden">
+          {[
+            ['attendance', 'Attendance', 'attendance'],
+            ['salaries', 'Salaries', 'salary'],
+          ].map(([value, label, icon]) => {
+            const isOn = (value === 'salaries') === onSalaries;
+            return (
+              <Link
+                key={value}
+                href={tabHref(value)}
+                aria-current={isOn ? 'page' : undefined}
+                className={isOn ? 'seg-item-active' : 'seg-item'}
+              >
+                <Icon name={icon} className="h-4 w-4" />
+                {label}
+              </Link>
+            );
+          })}
+        </nav>
+      ) : null}
+
+      {isOwner && unpaidLastMonth > 0 && lastMonth ? (
+        <Notice tone="warn" icon="salary" title={`${lastMonth.label} is not fully paid`} className="mt-4">
+          {unpaidLastMonth === 1 ? 'One person has' : `${unpaidLastMonth} people have`} days in{' '}
+          {lastMonth.label} with pay still to settle.{' '}
+          <a className="font-semibold underline" href={monthHref(lastMonthStart)}>
+            Show {lastMonth.label}
+          </a>
+        </Notice>
+      ) : null}
+
+      {/* ---------------------------------------------------- the register */}
+      <section
+        aria-labelledby="attendance-heading"
+        className={`@container mt-10 ${onSalaries ? PHONE_HIDDEN : ''}`}
+      >
+        <SectionHeader
+          id="attendance-heading"
+          icon="attendance"
+          title="Attendance"
+          description={`Who worked on ${formatDate(date)}. Tap one choice per person; it saves straight away.`}
+        />
+        {isFuture ? (
+          <Notice tone="info" title="This day has not come yet" className="mb-4">
+            Attendance can be marked for today and the days before it.
+          </Notice>
+        ) : null}
+        {active.length === 0 ? (
+          <div data-card className="panel">
+            <EmptyState
+              icon="staff"
+              title="No staff yet"
+              description={
+                isOwner
+                  ? 'Add each person the pump pays by the day, with their daily rate, under Staff list below. They then appear here every day to be marked.'
+                  : 'The owner adds the staff on this page. They then appear here every day to be marked.'
+              }
+            />
+          </div>
+        ) : (
+          <AttendanceRegister key={date} staff={active} date={date} initial={attendance} disabled={isFuture} />
+        )}
+      </section>
+
+      {isOwner ? (
+        <>
+          {/* ---------------------------------------------- the month's pay */}
+          <section
+            aria-labelledby="salaries-heading"
+            className={`@container mt-8 @[44rem]:mt-12 ${onSalaries ? '' : PHONE_HIDDEN}`}
+          >
+            <SectionHeader
+              id="salaries-heading"
+              icon="salary"
+              tone="money"
+              title={`Salaries, ${month.label}`}
+              description="What each person earned from the register, and paying it."
+            >
+              {monthPicker('salary-month', 'hidden flex-wrap items-center gap-2 @[44rem]:flex')}
+            </SectionHeader>
+
+            {/* Salaries typed into Expenses by hand, the only way before this
+                page. Paying the same person here as well would take them off
+                the month's profit twice, and nothing else on screen says so. */}
+            {handTyped.length > 0 ? (
+              <Notice tone="warn" icon="warning" title="Some salaries are already in Expenses" className="mb-4">
+                {month.label} already has {formatPKR(sumMoney(handTyped.map((row) => row.amount)))} of
+                salaries typed into Expenses by hand. Don&apos;t pay the same people here too, or
+                they come off the profit twice.
+              </Notice>
+            ) : null}
+
+            {/* The phone's totals: one strip, not three tall cards. */}
+            {/* Side by side from 22rem; stacked as rows below it, where three
+                six-figure sums no longer fit across (a 360px phone). */}
+            <div
+              data-card
+              className="panel grid grid-cols-1 divide-y divide-ink-200 @[22rem]:grid-cols-3 @[22rem]:divide-x @[22rem]:divide-y-0 @[44rem]:hidden"
+            >
+              {[
+                ['Earned', earned, 'text-ink-900'],
+                ['Paid', paid, 'text-brand-700'],
+                ['To pay', toPay, toPay > 0 ? 'text-red-700' : 'text-ink-900'],
+              ].map(([label, value, color]) => (
+                <div
+                  key={label}
+                  className="flex items-baseline justify-between gap-3 px-4 py-2.5 @[22rem]:block @[22rem]:px-2 @[22rem]:py-3 @[22rem]:text-center"
+                >
+                  <p className="caption">{label}</p>
+                  <p className={`tabular text-lg font-bold whitespace-nowrap @[22rem]:mt-0.5 @[22rem]:text-base @[26rem]:text-lg ${color}`}>
+                    {formatPKR(value)}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            {/* The phone's list: one card per person, and its one action. */}
+            {salaries.length === 0 ? null : (
+              <ul className="mt-4 space-y-3 @[44rem]:hidden">
+                {salaries.map((row) => (
+                  <li
+                    key={row.staff_id}
+                    data-card
+                    className={`panel p-4 ${row.is_active ? '' : 'bg-ink-50/60'}`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-lg font-bold text-ink-900">
+                          {row.name}
+                          {row.is_active ? null : (
+                            <span className="badge ml-2 bg-ink-100 align-middle text-sm font-normal text-ink-700">
+                              Removed
+                            </span>
+                          )}
+                        </p>
+                        <p className="text-sm text-ink-600">
+                          {row.job ? `${row.job} · ` : ''}
+                          <span className="whitespace-nowrap">{formatPKR(row.daily_rate)} a day</span>
+                        </p>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className="tabular text-xl font-bold whitespace-nowrap text-ink-900">
+                          {formatPKR(row.earned)}
+                        </p>
+                        <p className="text-sm whitespace-nowrap text-ink-600">{days(row.days_worked)} worked</p>
+                      </div>
+                    </div>
+                    <p className="mt-1 text-sm text-ink-600">
+                      {row.present} full, {row.half} half, {row.absent} absent
+                      {Number(row.not_marked) > 0 ? (
+                        <span className="font-semibold text-amber-800">, {row.not_marked} not marked</span>
+                      ) : null}
+                    </p>
+                    <div className="mt-3">
+                      <PayBlock row={row} month={month} monthStart={monthStart} card />
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {/* On a phone the month is chosen after the list: it opens on the
+                current month almost every time. */}
+            {monthPicker('salary-month-phone', 'mt-4 flex flex-wrap items-center gap-2 @[44rem]:hidden')}
+
+            <div className="hidden @[44rem]:block">
+            <KpiGrid columns={3}>
+              <KpiCard label="Earned" value={formatPKR(earned)} icon="attendance" tone="neutral" sub={`${month.label}, from the days marked`} />
+              <KpiCard label="Paid" value={formatPKR(paid)} icon="salary" tone="money" sub="Recorded in Expenses" />
+              <KpiCard
+                label="Still to pay"
+                value={formatPKR(toPay)}
+                icon="warning"
+                tone={unpaidCount > 0 ? 'alert' : 'neutral'}
+                sub={unpaidCount === 0 ? 'Nobody waiting' : unpaidCount === 1 ? '1 person' : `${unpaidCount} people`}
+              />
+            </KpiGrid>
+            </div>
+
+            {salaries.length === 0 ? null : (
+              <div data-card className="panel mt-5 hidden overflow-hidden @[44rem]:block">
+                <div className="table-scroll mx-0 max-h-none px-0">
+                  <table className="w-full min-w-[34rem]">
+                    <thead>
+                      <tr>
+                        <th className="th pl-5">Staff</th>
+                        <th className="th text-right">Daily rate</th>
+                        <th className="th whitespace-nowrap">Days worked</th>
+                        <th className="th pr-5 text-right">Earned and paid</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-ink-100">
+                      {salaries.map((row) => (
+                        <tr key={row.staff_id} className={row.is_active ? undefined : 'bg-ink-50/60'}>
+                          <td className="td pl-5">
+                            <span className="block font-semibold text-ink-900">
+                              {row.name}
+                              {row.is_active ? null : (
+                                <span className="badge ml-2 bg-ink-100 font-normal text-ink-700">Removed</span>
+                              )}
+                            </span>
+                            {row.job ? <span className="block text-sm text-ink-600">{row.job}</span> : null}
+                          </td>
+                          <td className="td-num">
+                            {formatPKR(row.daily_rate)}
+                            {Number(row.rate_changes) > 0 ? (
+                              <span className="block text-sm font-normal whitespace-nowrap text-ink-600">changed in month</span>
+                            ) : null}
+                          </td>
+                          {/* One column, not four: Present, Half, Absent and Not marked
+                              side by side pushed the Pay button off the card below
+                              1366px. The total is the figure; the split is under it. */}
+                          <td className="td">
+                            <span className="tabular block font-semibold whitespace-nowrap text-ink-900">
+                              {days(row.days_worked)}
+                            </span>
+                            <span className="tabular block text-sm text-ink-600">
+                              <span className="whitespace-nowrap">{row.present} full,</span>{' '}
+                              <span className="whitespace-nowrap">{row.half} half,</span>{' '}
+                              <span className="whitespace-nowrap">{row.absent} absent</span>
+                            </span>
+                            {Number(row.not_marked) > 0 ? (
+                              <span className="tabular block text-sm font-semibold text-amber-800">
+                                {row.not_marked} not marked
+                              </span>
+                            ) : null}
+                          </td>
+                          {/* Earned and what was done about it, in one cell: as two
+                              columns the Pay button was the first thing to scroll
+                              off the card on a laptop with the sidebar open. */}
+                          <td className="td pr-5 text-right">
+                            <span className="tabular mb-1.5 block text-lg font-bold whitespace-nowrap text-ink-900">
+                              {formatPKR(row.earned)}
+                            </span>
+                            <PayBlock row={row} month={month} monthStart={monthStart} />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="caption border-t border-ink-200 px-5 py-3">
+                  A half day is paid half the daily rate. A day not marked is not paid: mark it first.
+                  Once a month is paid, its attendance is closed until the payment is cancelled.
+                </p>
+              </div>
+            )}
+          </section>
+
+          {/* ------------------------------------------------ the people */}
+          <section
+            aria-labelledby="staff-heading"
+            className={`@container mt-12 ${onSalaries ? '' : PHONE_HIDDEN}`}
+          >
+            <SectionHeader
+              id="staff-heading"
+              icon="staff"
+              title="Staff list"
+              description="Everyone the pump pays by the day, and their daily rate. Not the logins: those are under Account."
+            >
+              <AddStaffButton />
+            </SectionHeader>
+
+            {staff.length === 0 ? null : (
+              <div data-card className="panel overflow-hidden">
+                <div className="table-scroll mx-0 max-h-none px-0">
+                  <table className="w-full min-w-[40rem]">
+                    <thead>
+                      <tr>
+                        <th className="th pl-5">Name</th>
+                        <th className="th">Phone</th>
+                        <th className="th text-right">Daily rate</th>
+                        <th className="th">Since</th>
+                        <th className="th pr-5">
+                          <span className="sr-only">Change</span>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-ink-100">
+                      {[...active, ...retired].map((person) => {
+                        const rate = currentRate(person, today);
+                        return (
+                          <tr key={person.id} className={person.is_active ? undefined : 'bg-ink-50/60 text-ink-600'}>
+                            <td className="td pl-5">
+                              <span className="block font-semibold whitespace-nowrap text-ink-900">
+                                {person.name}
+                                {person.is_active ? null : (
+                                  <span className="badge ml-2 bg-ink-100 font-normal text-ink-700">Removed</span>
+                                )}
+                              </span>
+                              {person.job ? <span className="block text-sm text-ink-600">{person.job}</span> : null}
+                            </td>
+                            <td className="td tabular whitespace-nowrap">{person.phone ?? ''}</td>
+                            <td className="td-num font-semibold">{rate ? formatPKR(rate.daily_rate) : ''}</td>
+                            <td className="td whitespace-nowrap">{rate ? formatDate(rate.effective_from) : ''}</td>
+                            <td className="td pr-5">
+                              <div className="flex items-center justify-end gap-2">
+                                {person.is_active ? (
+                                  <>
+                                    <ChangeRateButton
+                                      person={person}
+                                      rateLabel={rate ? formatPKR(rate.daily_rate) : ''}
+                                    />
+                                    <RemoveStaffButton person={person} />
+                                  </>
+                                ) : (
+                                  <RestoreStaffButton person={person} />
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </section>
+        </>
+      ) : null}
+    </div>
+  );
+}
