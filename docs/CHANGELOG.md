@@ -171,6 +171,14 @@ new argument. No existing row is touched. Desktop build: migration 086 and `Cust
 `createCustomer` action. The Guide's credit-customer step and `docs/CLIENT_SETUP_GUIDE.md` say to use
 the close of the day before the start.
 
+## Cash handed to a customer counts in the day's collection (088, 13 Oct 2026)
+
+Raees Gullan only for now (Al Hakeem's 809 and 810). On 1 Oct the owner's cash count was Rs 71,076 while the
+Dashboard expected Rs 71,200 more, because Rs 35,000 given to Rais Sadaqat Ali and Rs 30,000 and Rs 6,200 on
+the owner's own account were written as customer debits, which the panel never saw. `get_day_collection` now
+counts a hand-entered debit, dated the day, as credit (`entered_credit`), skipping the orphans of cleared days,
+cancelled entries and, new here, opening balances. Read-only. The master does not have it.
+
 ## A new supplier can start with what the pump owed them, dated (087, 13 Oct 2026)
 
 The same trap as the customer's (086), on the supplier side. Add a supplier took a name, a phone and

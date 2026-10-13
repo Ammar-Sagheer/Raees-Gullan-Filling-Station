@@ -1046,6 +1046,7 @@ Applied in order:
 | `085_collection_received_ignores_cancelled_payments.sql` | `get_day_collection`'s `received` no longer counts a payment cancelled with "correct this entry". Read-only, create or replace. (Al Hakeem's 810 includes it) |
 | `086_opening_balance_can_be_dated.sql` | `create_customer_with_opening()` takes an optional `p_opening_date` (null = today, never in the future) so a new customer's opening balance can sit on the day it stood. The old six-argument function is dropped. The new-customer form has an As of box |
 | `087_new_supplier_with_a_dated_opening_balance.sql` | New `create_supplier_with_opening()` (owner only): makes the supplier and, when an amount is given, an opening `adjustment` (owe_more) dated `p_opening_date` (null = today, never in the future) in one transaction. Nothing dropped or replaced. The Add a supplier form has a "What the pump already owed them" box and an As of box |
+| `088_hand_entered_customer_debits_count_as_credit.sql` | `get_day_collection` counts a customer debit written by hand (cash handed to a customer out of the takings) as credit on its date, returned as `entered_credit`; opening-balance entries are left out. Read-only, create or replace. Raees Gullan only for now, carried from Al Hakeem's 809 and 810 |
 
 All reporting is done as Postgres aggregate RPCs rather than in the browser, so
 the numbers are fast and cannot be altered client-side.
