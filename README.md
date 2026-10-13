@@ -1045,6 +1045,7 @@ Applied in order:
 | `084_customer_payments_in_the_days_collection.sql` | Nullable `ledger_entries.is_payment`, set by Record a payment; `get_day_collection` adds `received` (payments dated the day) into the day's cash to collect, as a credit customer's payment is cash the staff hold. Al Tufail's own 900 is the same. No row changed |
 | `085_collection_received_ignores_cancelled_payments.sql` | `get_day_collection`'s `received` no longer counts a payment cancelled with "correct this entry". Read-only, create or replace. (Al Hakeem's 810 includes it) |
 | `086_opening_balance_can_be_dated.sql` | `create_customer_with_opening()` takes an optional `p_opening_date` (null = today, never in the future) so a new customer's opening balance can sit on the day it stood. The old six-argument function is dropped. The new-customer form has an As of box |
+| `087_new_supplier_with_a_dated_opening_balance.sql` | New `create_supplier_with_opening()` (owner only): makes the supplier and, when an amount is given, an opening `adjustment` (owe_more) dated `p_opening_date` (null = today, never in the future) in one transaction. Nothing dropped or replaced. The Add a supplier form has a "What the pump already owed them" box and an As of box |
 
 All reporting is done as Postgres aggregate RPCs rather than in the browser, so
 the numbers are fast and cannot be altered client-side.

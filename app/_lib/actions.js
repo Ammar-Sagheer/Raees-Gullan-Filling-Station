@@ -1752,19 +1752,46 @@ export async function saveSupplier(_prevState, formData) {
   const phone = text(formData, 'phone');
   const note = text(formData, 'note');
 
+  // What the pump already owed them, and the day that stood (087). New suppliers only.
+  const openingAmount = supplierId ? null : number(formData, 'opening_amount');
+  const openingDate = text(formData, 'opening_date');
+
   if (!name) return fail('Enter the supplier name.');
+  if (openingAmount !== null && openingAmount < 0) {
+    return fail('Enter what the pump owed them as a positive figure.');
+  }
+  if (openingDate && !/^\d{4}-\d{2}-\d{2}$/.test(openingDate)) {
+    return fail('Enter the date the opening balance is as of.');
+  }
 
   const supabase = await createClient();
   const row = { name, phone: phone || null, note: note || null };
-  const { error } = supplierId
-    ? await supabase.from('suppliers').update(row).eq('id', supplierId)
-    : await supabase.from('suppliers').insert(row);
+  const owed = openingAmount ? roundMoney(openingAmount) : 0;
+  let error;
+  if (supplierId) {
+    ({ error } = await supabase.from('suppliers').update(row).eq('id', supplierId));
+  } else if (owed > 0) {
+    // One transaction for the supplier and its opening entry (087), so the
+    // account cannot exist without the balance typed with it.
+    const rpcArgs = { p_name: name, p_phone: row.phone, p_note: row.note, p_opening_amount: owed };
+    // Sent only when it is not today, as for a customer (086).
+    if (openingDate && openingDate !== todayISO()) rpcArgs.p_opening_date = openingDate;
+    ({ error } = await supabase.rpc('create_supplier_with_opening', rpcArgs));
+  } else {
+    ({ error } = await supabase.from('suppliers').insert(row));
+  }
 
   if (error) return fail(describe(error, 'Could not save the supplier.'));
 
   revalidateSupplier(supplierId);
   revalidatePath('/admin/purchases');
-  return ok(supplierId ? `${name} saved.` : `${name} added, with nothing owed.`);
+  return ok(
+    supplierId
+      ? `${name} saved.`
+      : owed > 0
+        ? `${name} added, owed ${formatPKR(owed)}.`
+        : `${name} added, with nothing owed.`,
+  );
 }
 
 /**

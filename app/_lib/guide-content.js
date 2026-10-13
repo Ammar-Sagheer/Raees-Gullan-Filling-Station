@@ -94,7 +94,7 @@ export const GUIDE = {
         {
           title: 'Suppliers',
           where: { icon: 'suppliers', path: 'Suppliers → Add a supplier' },
-          body: 'Add the company or dealer you buy fuel from. If you owe them money from before the first day, open the supplier and add that as an opening balance. Deliveries work without a supplier, but then the app cannot show what you owe.',
+          body: 'Add the company or dealer you buy fuel from. If you owe them money from before the first day, type it in the same form under “What the pump already owed them” and set As of to the close of the day before you start (30 September for a 1 October start). Deliveries work without a supplier, but then the app cannot show what you owe.',
         },
         {
           title: 'Staff logins',
@@ -358,7 +358,7 @@ export const GUIDE = {
         {
           title: 'سپلائر',
           where: { icon: 'suppliers', path: 'سپلائر ← سپلائر شامل کریں' },
-          body: 'وہ کمپنی یا ڈیلر شامل کریں جس سے آپ تیل خریدتے ہیں۔ اگر پہلے دن سے پہلے کی کوئی رقم آپ کے ذمے ہے تو سپلائر کھول کر وہ ابتدائی بیلنس کے طور پر لکھ دیں۔ سپلائر کے بغیر بھی ڈلیوری درج ہو جاتی ہے، مگر پھر ایپ یہ نہیں بتا سکتی کہ آپ کے ذمے کتنا ہے۔',
+          body: 'وہ کمپنی یا ڈیلر شامل کریں جس سے آپ تیل خریدتے ہیں۔ اگر پہلے دن سے پہلے کی کوئی رقم آپ کے ذمے ہے تو اسی فارم میں «اب تک آپ کے ذمے» کے خانے میں لکھ دیں، اور «تاریخ» شروع سے ایک دن پہلے کی رکھیں (یکم اکتوبر سے شروع کرنے پر 30 ستمبر)۔ سپلائر کے بغیر بھی ڈلیوری درج ہو جاتی ہے، مگر پھر ایپ یہ نہیں بتا سکتی کہ آپ کے ذمے کتنا ہے۔',
         },
         {
           title: 'ملازمین کے لاگ اِن',

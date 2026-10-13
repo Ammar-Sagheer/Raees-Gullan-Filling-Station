@@ -156,8 +156,9 @@ the day they first buy on credit.
 
 Press **Add a supplier** for the company or dealer you buy fuel from (example:
 `Pak Petroleum Depot`). If you owe the supplier money from before the 1st,
-open the supplier and add the amount as an opening balance (the app suggests
-"An opening balance from the old register"). Without a supplier, deliveries
+type the amount in the same form under "What the pump already owed them" and
+set **As of** to the close of the day before you start (30 September for a
+1 October start). Without a supplier, deliveries
 still work; the supplier is only for tracking what you owe.
 
 ---

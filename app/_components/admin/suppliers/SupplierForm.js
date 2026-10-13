@@ -8,6 +8,8 @@ import FormMessage from '@/app/_components/ui/FormMessage';
 import Toast from '@/app/_components/ui/Toast';
 import Dialog from '@/app/_components/ui/Dialog';
 import Button from '@/app/_components/ui/Button';
+import NumberInput from '@/app/_components/ui/NumberInput';
+import { todayISO } from '@/app/_lib/date-helpers';
 
 /**
  * Adding a supplier, or changing one's name, phone and note, behind one dialog.
@@ -67,7 +69,7 @@ export default function SupplierForm({ supplier = null, variant = 'secondary' })
           <span className="text-sm text-ink-600">
             {editing
               ? 'The name changes everywhere it is shown, including past deliveries on this account.'
-              : 'Starts with nothing owed. Deliveries chosen against it are added by themselves.'}
+              : 'Leave what the pump owed them blank to start at nothing. Deliveries chosen against it are added by themselves.'}
           </span>
         }
       >
@@ -123,6 +125,42 @@ export default function SupplierForm({ supplier = null, variant = 'secondary' })
               placeholder="e.g. diesel and petrol, delivers Tuesdays"
             />
           </div>
+
+          {editing ? null : (
+            <div className="rounded-lg border border-ink-200 p-3">
+              <label className="label" htmlFor={idFor('opening_amount')}>
+                What the pump already owed them{' '}
+                <span className="font-normal text-ink-600">(optional)</span>
+              </label>
+              <NumberInput
+                id={idFor('opening_amount')}
+                name="opening_amount"
+                step="0.01"
+                min="0"
+                className="input-number"
+                placeholder="0"
+              />
+              <div className="mt-3">
+                <label className="label" htmlFor={idFor('opening_date')}>
+                  As of
+                </label>
+                <input
+                  id={idFor('opening_date')}
+                  name="opening_date"
+                  type="date"
+                  required
+                  max={todayISO()}
+                  defaultValue={todayISO()}
+                  className="input"
+                />
+                <p className="mt-1 text-sm text-ink-600">
+                  The day this balance stood. Setting the app up on the 1st with days still to type
+                  in? Use the close of the day before (30 September for a 1 October start), so the
+                  balance sits above those days on the account.
+                </p>
+              </div>
+            </div>
+          )}
 
           <FormMessage state={showResult ? state : null} />
 
