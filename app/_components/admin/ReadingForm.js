@@ -400,6 +400,9 @@ function SavedReading({ row, date, creditSales, canDelete }) {
         <Figure label={t('nozzle.opening')} value={meter(row.opening_reading)} />
         <Figure label={t('nozzle.closing')} value={meter(row.closing_reading)} />
         <Figure label={t('nozzle.sold')} value={fmt.litres(row.litres_sold || 0)} strong />
+        {Number(row.test_litres) > 0 ? (
+          <Figure label="Test pour, back in the tank" value={fmt.litres(row.test_litres)} />
+        ) : null}
         <Figure label={t('nozzle.rate')} value={row.rate ? fmt.rate(row.rate) : t('nozzle.notSet')} />
         <Figure label={t('nozzle.total')} value={fmt.rupees(row.sale_amount || 0)} strong className="col-span-2" />
         <Figure label={t('nozzle.cash')} value={fmt.rupees(row.cash_amount || 0)} />
@@ -464,13 +467,18 @@ function EntryForm({ row, date, customers }) {
   const rate = Number(row.rate ?? 0);
 
   const [closing, setClosing] = useState('');
+  const [testLitres, setTestLitres] = useState('');
   const [lines, setLines] = useState([]);
   const [skipConfirmed, setSkipConfirmed] = useState(false);
 
   const closingValue = closing === '' ? null : Number(closing);
   const hasClosing = closingValue !== null && Number.isFinite(closingValue);
 
-  const litres = hasClosing ? round2(closingValue - opening) : 0;
+  // Test pour (902): litres that turned the meter and went back into the tank.
+  const testValue = testLitres === '' ? 0 : Number(testLitres);
+  const metered = hasClosing ? round2(closingValue - opening) : 0;
+  const testTooBig = hasClosing && Number.isFinite(testValue) && testValue > metered;
+  const litres = hasClosing ? round2(metered - (Number.isFinite(testValue) ? testValue : 0)) : 0;
   const saleAmount = exactSaleAmount(litres, rate);
   const creditTotal = round2(lines.reduce((total, line) => total + (Number(line.amount) || 0), 0));
   const cashAmount = round2(saleAmount - creditTotal);
@@ -526,6 +534,7 @@ function EntryForm({ row, date, customers }) {
     rate > 0 &&
     hasClosing &&
     !meterWentBackwards &&
+    !testTooBig &&
     !creditExceedsSale &&
     !overlapsNextDay &&
     (!hasDateGap || skipConfirmed);
@@ -630,6 +639,35 @@ function EntryForm({ row, date, customers }) {
             placeholder="0.00"
           />
         </div>
+      </div>
+
+      {/* A test pour (the measure check): fuel the meter counted that went straight
+          back into the tank. The closing reading stays what the machine shows. */}
+      <div>
+        <label className="label" htmlFor={`test-${row.nozzle_id}`}>
+          Test pour put back in the tank (litres, if any)
+        </label>
+        <NumberInput
+          id={`test-${row.nozzle_id}`}
+          name="test_litres"
+          step="0.01"
+          min={0}
+          value={testLitres}
+          onChange={(event) => setTestLitres(event.target.value)}
+          className="input-number"
+          placeholder="0"
+        />
+        {testValue > 0 && !testTooBig ? (
+          <p className="mt-1 text-sm text-ink-600">
+            {fmt.litres(testValue)} is not counted as sold: the meter moved {fmt.litres(metered)}, so{' '}
+            {fmt.litres(litres)} is sold.
+          </p>
+        ) : null}
+        {testTooBig ? (
+          <p className="mt-1 text-sm font-medium text-red-700">
+            The test litres are more than the meter moved.
+          </p>
+        ) : null}
       </div>
 
       {meterWentBackwards ? (

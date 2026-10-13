@@ -171,6 +171,18 @@ new argument. No existing row is touched. Desktop build: migration 086 and `Cust
 `createCustomer` action. The Guide's credit-customer step and `docs/CLIENT_SETUP_GUIDE.md` say to use
 the close of the day before the start.
 
+## A test pour is a field on the reading (089, 13 Oct 2026)
+
+Carried from Al Tufail's 902. On 1 Oct the register took Rs 12,022 off the day's cash for a test pour of
+diesel (about 29.47 L at Rs 407.95) that went through the meter and back into the tank. It had been entered as
+a "Diesel shifting" expense, which it is not: the closing meter stays what the machine shows, and the litres
+never left the tank. `nozzle_readings.test_litres` (nullable) makes `litres_sold` and `sale_amount` net of it;
+`create_nozzle_reading` takes `p_test_litres`; the reading form has the field; the balanced-day check and the
+re-price of a backdated rate use the net litres. The file drops and recreates the two generated columns, so on
+a live project it is run from the SQL Editor (the connector times out on a drop). Tried on a scratch database
+with a reading already in it: the file applies, and a test of 29.47 L on a 329.63 L reading gives 300.16 L and
+Rs 122,450.27. A test pour larger than the meter moved is refused. Not yet in the master or Mubeen.
+
 ## Cash handed to a customer counts in the day's collection (088, 13 Oct 2026)
 
 Raees Gullan only for now (Al Hakeem's 809 and 810). On 1 Oct the owner's cash count was Rs 71,076 while the

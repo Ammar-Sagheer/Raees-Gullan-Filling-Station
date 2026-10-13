@@ -279,10 +279,22 @@ export async function getCurrentRates(onDate) {
  */
 export async function getReadingSheet(date) {
   const supabase = await createClient();
-  return unwrap(
+  const sheet = unwrap(
     await supabase.rpc('get_reading_sheet', { p_date: date }),
     "the day's reading sheet",
   );
+
+  // Test litres (902): the sheet's own columns are untouched, so the litres of
+  // a test pour are read from the readings and laid onto their rows here.
+  const ids = sheet.map((row) => row.reading_id).filter(Boolean);
+  if (ids.length === 0) return sheet;
+  const { data: tests } = await supabase
+    .from('nozzle_readings')
+    .select('id, test_litres')
+    .in('id', ids)
+    .not('test_litres', 'is', null);
+  const byId = new Map((tests ?? []).map((r) => [r.id, r.test_litres]));
+  return sheet.map((row) => (byId.has(row.reading_id) ? { ...row, test_litres: byId.get(row.reading_id) } : row));
 }
 
 /**

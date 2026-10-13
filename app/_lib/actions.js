@@ -313,6 +313,8 @@ export async function saveReading(_prevState, formData) {
   const opening = number(formData, 'opening_reading');
   const closing = number(formData, 'closing_reading');
   const rate = number(formData, 'rate_per_litre');
+  // Litres that went through the meter and back into the tank (902). Not a sale.
+  const testLitres = number(formData, 'test_litres') ?? 0;
 
   if (!nozzleId || !readingDate) return fail(t('said.missingNozzle'));
   if (opening === null) return fail(t('said.enterOpening'));
@@ -322,6 +324,10 @@ export async function saveReading(_prevState, formData) {
   }
   if (closing < opening) {
     return fail(t('said.closingLower'));
+  }
+  if (testLitres < 0) return fail('Test litres cannot be negative.');
+  if (testLitres > roundMoney(closing - opening)) {
+    return fail('The test litres are more than the meter moved. Check the closing reading and the test litres.');
   }
 
   // Credit slips arrive as JSON from the form component.
@@ -374,7 +380,7 @@ export async function saveReading(_prevState, formData) {
     });
   }
 
-  const litresSold = roundMoney(closing - opening);
+  const litresSold = roundMoney(closing - opening - testLitres);
 
   /*
    * EXACT, not `roundMoney(litresSold * rate)`. That was a floating-point
@@ -405,6 +411,7 @@ export async function saveReading(_prevState, formData) {
     p_rate: rate,
     p_cash: cashAmount,
     p_credit_lines: cleanedLines,
+    p_test_litres: testLitres,
   });
 
   if (error) return refuse(describe(error, t('said.readingFailed')));
