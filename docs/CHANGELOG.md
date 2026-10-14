@@ -171,6 +171,19 @@ new argument. No existing row is touched. Desktop build: migration 086 and `Cust
 `createCustomer` action. The Guide's credit-customer step and `docs/CLIENT_SETUP_GUIDE.md` say to use
 the close of the day before the start.
 
+## Money in / out inside the nozzle's form (14 Oct 2026, Raees Gullan)
+
+On 2 Oct two parties took cash from the pump and no fuel (the owner's brother and father are among those who do), and
+the only place to write it was a customer's page, opened later. The nozzle's form now has a **Money in / out** button
+(`CashInOutButton.js`, from Al Tufail's "Money received") with two ways in one dialog: **Money received**
+(`recordPayment`, a credit counted in the day's cash to collect, 084) and **Money taken** (`recordCashGiven`, a debit
+noted "Cash given", which 088 counts as credit so the staff are not asked for cash that is not in the drawer). Both
+are dated the day on screen, save on their own and need no migration. The dialog is rendered into `document.body`:
+the button sits inside the nozzle's `<form>`, and a form inside a form never submits (the Money received bug of
+11 Oct). Checked in a browser at 1280 and 400 px wide: the dialog's form is not inside another form, one Server
+Action request goes out on Record, and a 30,000 debit moved the day's `entered_credit` by exactly 30,000. English
+only, like the rest of this copy. Not in the master.
+
 ## A test pour is a field on the reading (089, 13 Oct 2026)
 
 Carried from Al Tufail's 902. On 1 Oct the register took Rs 12,022 off the day's cash for a test pour of

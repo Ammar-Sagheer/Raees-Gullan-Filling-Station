@@ -21,6 +21,7 @@ import Dialog from '@/app/_components/ui/Dialog';
 import Icon from '@/app/_components/ui/Icon';
 import { fuelColor } from '@/app/_lib/fuel-colors';
 import Button from '@/app/_components/ui/Button';
+import CashInOutButton from '@/app/_components/admin/CashInOutButton';
 import { useI18n } from '@/app/_components/i18n/I18nProvider';
 import { rich } from '@/app/_lib/i18n/core';
 
@@ -337,7 +338,13 @@ export default function ReadingForm({
         }
       >
         {isSaved ? (
-          <SavedReading row={row} date={date} creditSales={creditSales} canDelete={canDelete} />
+          <SavedReading
+            row={row}
+            date={date}
+            customers={customers}
+            creditSales={creditSales}
+            canDelete={canDelete}
+          />
         ) : (
           <EntryForm row={row} date={date} customers={customers} />
         )}
@@ -380,7 +387,7 @@ function RowFigure({ label, value, strong, tone }) {
 // Already entered - show what was recorded
 // ---------------------------------------------------------------------------
 
-function SavedReading({ row, date, creditSales, canDelete }) {
+function SavedReading({ row, date, customers, creditSales, canDelete }) {
   const [state, formAction] = useActionState(deleteReading, null);
   const { t, fmt } = useI18n();
   const meter = (n) => fmt.isolate(meterFormat.format(n));
@@ -424,6 +431,11 @@ function SavedReading({ row, date, creditSales, canDelete }) {
           </ul>
         </div>
       ) : null}
+
+      {/* Cash that went across the counter with a customer, beside the slips above. */}
+      <div>
+        <CashInOutButton customers={customers} date={date} />
+      </div>
 
       <FormMessage state={state} />
 
@@ -854,6 +866,11 @@ function EntryForm({ row, date, customers }) {
             ))}
           </ul>
         )}
+      </div>
+
+      {/* Cash with a customer, no fuel: money they paid, or money they took. */}
+      <div className="flex justify-end">
+        <CashInOutButton customers={customers} date={date} />
       </div>
 
       {/* ---- the split ---- */}

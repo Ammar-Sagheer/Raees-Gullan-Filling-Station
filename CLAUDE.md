@@ -13,6 +13,7 @@
 >   language switch and every login reads English.
 > - The backup panel shows only when the Vercel env var `SHOW_BACKUP=true`.
 > - **Cash handed to a customer counts in the day's collection** (migration 088, this copy only for now, from Al Hakeem's 809 and 810): `get_day_collection` counts a customer debit written by hand as credit.
+> - **Money in / out in the nozzle's form** (`CashInOutButton.js`, `recordCashGiven`; no migration): Money received (a customer paid) and Money taken (a customer or the owner's family took cash, no fuel; counted by 088). Not in the master.
 > - **Test pour litres on a reading** (migration 089, from Al Tufail's 902): `nozzle_readings.test_litres`, fuel the meter counted that went back into the tank; `litres_sold` and `sale_amount` are net of it. A field in the reading form.
 > - `supabase/setup/raees-gullan-tanks.sql`: his two tanks, Petrol Tank 6,695.17 L (SRN chart) and Diesel Tank 15,691 L, opening stock 0; run after `start-empty.sql`, before the charts. He adds nozzles himself.
 > - `supabase/setup/raees-gullan-1oct-2oct.sql`: his forecourt (petrol 25,000 L, diesel two joined tanks 50,000 L, three nozzles, prices) and the first two days of his register (1 and 2 Oct readings and midnight dips, the 1 Oct expense, safe and diesel supplier payment), from his register pages; no customers or credit yet. Run after the charts, with the owner login in place.
