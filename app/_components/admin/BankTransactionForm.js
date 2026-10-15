@@ -415,6 +415,34 @@ export default function BankTransactionForm({ accounts, bare = false, onSaved, d
         <input id="txn_note" name="note" type="text" className="input" />
       </div>
 
+      {/* Money that came straight into the bank, never through the
+          safe, is not cash the staff have to hand in. The Dashboard's cash to
+          collect leaves a ticked deposit out. Cash taken from the safe to the
+          bank stays unticked. */}
+      {isDeposit ? (
+        <label
+          htmlFor="txn_direct"
+          className="flex items-start gap-3 rounded-xl border border-ink-200 bg-ink-50 p-3"
+        >
+          <input
+            id="txn_direct"
+            name="paid_in_directly"
+            type="checkbox"
+            value="true"
+            className="mt-1 h-4 w-4 shrink-0 rounded border-ink-300 text-brand-600
+                       focus:ring-2 focus:ring-brand-200"
+          />
+          <span className="text-sm">
+            <span className="block font-semibold text-ink-800">Paid straight into the bank</span>
+            <span className="block text-ink-600">
+              Tick it for a card payment, JazzCash, or a customer&apos;s transfer into the account.
+              Leave it empty for cash taken from the safe to the bank. The Dashboard does not ask the
+              staff for ticked money.
+            </span>
+          </span>
+        </label>
+      ) : null}
+
       {/* A failure stays where it happened, until it is dealt with. A success
           leaves as a toast. */}
       <FormMessage state={state?.ok === false ? state : null} />

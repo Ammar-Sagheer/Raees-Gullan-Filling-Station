@@ -9,7 +9,8 @@ import { formatDate } from '@/app/_lib/date-helpers';
  * Al Hakeem said the Dashboard must show.
  *
  *   total sales (fuel + oil) + received from customers - credit - the day's
- *   expenses  =  TO COLLECT (a credit customer's payment is cash the staff hold, 084)
+ *   expenses - what was paid straight into the bank (card, JazzCash, a customer's
+ *   transfer: 090)  =  TO COLLECT (a credit customer's payment is cash the staff hold, 084)
  *   TO COLLECT  -  handed in to the safe          =  STILL TO COLLECT
  *
  * Every figure arrives from Postgres (`get_day_collection`); this page adds
@@ -28,6 +29,10 @@ export default function CollectionPanel({ collection, date }) {
   const n = (value) => Number(value ?? 0);
   const still = n(collection.still_to_collect);
   const noReadings = n(collection.readings) === 0;
+  // Money paid straight into the bank (090): never in the drawer, so not asked of the
+  // staff. Shown only on a day that has some; a database without 910 sends none.
+  const bank = n(collection.bank_direct);
+  const hasBank = bank > 0;
 
   const state =
     still > 0.005
@@ -63,7 +68,13 @@ export default function CollectionPanel({ collection, date }) {
           readings first.
         </p>
       ) : (
-        <div className="grid gap-px bg-ink-200 @[36rem]:grid-cols-3 @[72rem]:grid-cols-[repeat(5,minmax(0,1fr))_minmax(0,1.3fr)]">
+        <div
+          className={`grid gap-px bg-ink-200 @[36rem]:grid-cols-3 ${
+            hasBank
+              ? '@[72rem]:grid-cols-[repeat(6,minmax(0,1fr))_minmax(0,1.3fr)]'
+              : '@[72rem]:grid-cols-[repeat(5,minmax(0,1fr))_minmax(0,1.3fr)]'
+          }`}
+        >
           <Step label="Total sales" value={formatPKR(collection.total_sales)} sub={
             n(collection.oil_sales) > 0
               ? `${formatPKR(collection.fuel_sales)} fuel, ${formatPKR(collection.oil_sales)} oil`
@@ -72,6 +83,9 @@ export default function CollectionPanel({ collection, date }) {
           <Step label="Received" value={formatPKR(collection.received)} sub="Paid in by customers" />
           <Step label="Credit" value={formatPKR(collection.total_credit)} sub="Not cash, on customers' accounts" />
           <Step label="Expenses" value={formatPKR(collection.expenses)} sub="Paid out today" />
+          {hasBank ? (
+            <Step label="Paid into the bank" value={formatPKR(bank)} sub="Card, JazzCash, transfers" />
+          ) : null}
           <Step label="Handed in" value={formatPKR(collection.handed_in)} sub="Into the safe today" />
           <div className="bg-white px-5 py-4">
             <p className="caption">{state.label}</p>

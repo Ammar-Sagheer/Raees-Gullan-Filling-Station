@@ -11,6 +11,16 @@ stock is calculated) see `README.md`. For the reusable patterns these
 entries establish (dialogs, table layout, buttons) see
 `docs/UI_CONVENTIONS.md`.
 
+## A bank deposit can say it never passed through the safe (090, 16 Oct 2026, Raees Gullan only)
+
+Carried from Mubeen's 910. A bank deposit has a nullable `paid_in_directly` flag, set by
+a tick box on the Bank entry form (deposits only). The Dashboard's "To collect from the
+staff" takes the day's flagged deposits off what is to be collected and shows them as
+"Paid into the bank". **Nothing is flagged on existing rows**: his cash goes to the bank
+in lump sums (Rs 700,000 on 6 Oct against Rs 119,908 of that day's sales), so flagging a
+deposit on its own date would push that day far below zero. The flag is for a deposit that
+matches the day it is dated. Offline build: one row in the sync checklist.
+
 ## Where things stand
 
 A short orientation, so a new session does not have to read the whole file to

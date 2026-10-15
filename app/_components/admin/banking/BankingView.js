@@ -195,6 +195,13 @@ export default function BankingView({ page, accounts, transactions, total = 0 })
                                     <span>
                                       {txn.category ?? (isDeposit ? 'Cash paid in' : 'Paid out')}
                                     </span>
+                                    {/* Ticked "Paid straight into the bank" (090): card, JazzCash or a
+                                        transfer, never cash in the safe. The Dashboard leaves it out. */}
+                                    {isDeposit && txn.paid_in_directly ? (
+                                      <span className="ms-2 rounded-full bg-brand-100 px-2 py-0.5 text-xs font-semibold text-brand-800">
+                                        Paid in directly
+                                      </span>
+                                    ) : null}
                                     {txn.note ? (
                                       <span className="mt-1 block max-w-[48ch] whitespace-normal text-sm text-ink-700 [overflow-wrap:anywhere]">
                                         <span className="font-semibold text-ink-800">Note:</span>{' '}

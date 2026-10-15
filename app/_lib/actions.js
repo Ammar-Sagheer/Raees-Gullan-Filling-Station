@@ -3254,6 +3254,9 @@ export async function createBankTransaction(_prevState, formData) {
   const txnDate = text(formData, 'txn_date');
   const category = text(formData, 'category');
   const note = text(formData, 'note');
+  // Ticked on a deposit that came straight into the bank (090): card, JazzCash, a
+  // customer's transfer. Sent only when ticked, so nothing changes for the rest.
+  const paidInDirectly = txnType === 'deposit' && formData.get('paid_in_directly') === 'true';
 
   if (!accountId) return fail('Choose which account.');
   if (txnType !== 'deposit' && txnType !== 'payment') return fail('Choose money in or money out.');
@@ -3297,6 +3300,7 @@ export async function createBankTransaction(_prevState, formData) {
     // A category says something about a payment and nothing about a deposit.
     category: null,
     note: note || null,
+    ...(paidInDirectly ? { paid_in_directly: true } : {}),
     created_by: profile.id,
   });
 
