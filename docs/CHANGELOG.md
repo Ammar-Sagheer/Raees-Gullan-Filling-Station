@@ -171,6 +171,19 @@ new argument. No existing row is touched. Desktop build: migration 086 and `Cust
 `createCustomer` action. The Guide's credit-customer step and `docs/CLIENT_SETUP_GUIDE.md` say to use
 the close of the day before the start.
 
+## Money in / out moves from the nozzle's form to the Readings page (15 Oct 2026, Raees Gullan)
+
+He asked for the button out of the nozzles and beside the bank entry. In each nozzle's form it was there once per nozzle,
+for cash that belongs to no nozzle, and a day's cash taken or received was easy to look for in the wrong one. It is now
+one **Money in / out** button in the Readings page's **day's entries** bar, between Add expense and Bank entry
+(`QuickEntry` takes an optional `customers`, so the Dashboard's bar is unchanged), dated the day on screen like the rest
+of that bar. The nozzle forms no longer carry it. The bar is the owner's, but the two actions allow the data-entry role
+too, so a staff login, which has no bar, gets a small "Cash with a customer" panel with the button alone: nothing a
+staff login could do before is taken away. The trigger became a bar button (the same outlined button and a cash icon as
+its neighbours) and the note's example no longer mentions a nozzle. No migration. Checked in a browser with the real
+Readings view on fixtures at 1366, 1024 and 400 px wide: one button on the page, in the bar beside Bank entry (stacked
+full width on a phone), none inside any of the three nozzle dialogs, and the dialog's form is not inside another form.
+
 ## Money in / out inside the nozzle's form (14 Oct 2026, Raees Gullan)
 
 On 2 Oct two parties took cash from the pump and no fuel (the owner's brother and father are among those who do), and

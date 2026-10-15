@@ -9,12 +9,16 @@ import FormMessage from '@/app/_components/ui/FormMessage';
 import Toast from '@/app/_components/ui/Toast';
 import Dialog from '@/app/_components/ui/Dialog';
 import Button from '@/app/_components/ui/Button';
+import Icon from '@/app/_components/ui/Icon';
 import NumberInput from '@/app/_components/ui/NumberInput';
 import { VehicleFinder, customerLabel } from '@/app/_components/admin/VehiclePicker';
 
 /**
- * Cash that went across the counter with a customer, entered from the nozzle's
- * own form (Raees Gullan, October 2026, from Al Tufail's "Money received").
+ * Cash that went across the counter with a customer, entered from the Readings
+ * page, beside Add expense and the bank entry (Raees Gullan, October 2026, from
+ * Al Tufail's "Money received"). It first sat inside each nozzle's form, once per
+ * nozzle for cash that has nothing to do with a nozzle; 15 Oct 2026 it moved to
+ * the page's bar, once for the day.
  *
  * TWO WAYS, ONE FORM:
  *   Money received - the customer paid. The same entry as "Record a payment" on
@@ -26,8 +30,8 @@ import { VehicleFinder, customerLabel } from '@/app/_components/admin/VehiclePic
  *                    written by hand as credit (088), so the staff are not asked
  *                    for cash that is not in the drawer.
  *
- * Both are dated the day the readings are for and save on their own, not with
- * the reading, so they work before the meter is typed in and after it is saved.
+ * Both are dated the day the readings are for (the day on screen) and save on
+ * their own, so they work before any meter is typed in and after every one is saved.
  * Reads in English: this copy has no language switch.
  */
 export default function CashInOutButton({ customers = [], date }) {
@@ -39,9 +43,9 @@ export default function CashInOutButton({ customers = [], date }) {
   const [amount, setAmount] = useState('');
 
   // The dialog is a native <dialog>, which stays in the DOM where it is rendered.
-  // This button sits INSIDE the nozzle's own <form>, so its form would be nested
-  // in that one and could never submit. Rendered into document.body it is a form
-  // of its own (the same fix as Al Tufail's Money received).
+  // Rendered into document.body it is a form of its own wherever the button sits
+  // (inside a form it could never submit: a nested <form>; it did when the button
+  // lived in the nozzle's form, and this keeps it safe if it is ever put in one).
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -81,19 +85,10 @@ export default function CashInOutButton({ customers = [], date }) {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setIsOpen(true)}
-        className="inline-flex items-center gap-1.5 rounded-lg border border-ink-200
-                   bg-white px-3 py-1.5 text-sm font-semibold text-ink-800 transition
-                   hover:border-ink-300 hover:bg-ink-50
-                   focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
-      >
-        <span aria-hidden="true" className="text-base leading-none">
-          +
-        </span>
+      <Button variant="secondary" type="button" onClick={() => setIsOpen(true)}>
+        <Icon name="cash" className="h-4 w-4" />
         Money in / out
-      </button>
+      </Button>
 
       {mounted
         ? createPortal(
@@ -186,7 +181,7 @@ export default function CashInOutButton({ customers = [], date }) {
                     type="text"
                     autoComplete="off"
                     className="input"
-                    placeholder={out ? 'e.g. pocket money, for the land' : 'e.g. cash, received at nozzle 2'}
+                    placeholder={out ? 'e.g. pocket money, for the land' : 'e.g. cash, paid at the office'}
                   />
                 </div>
 

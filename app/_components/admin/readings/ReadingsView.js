@@ -7,6 +7,7 @@ import LooseOilSaleForm from '@/app/_components/admin/LooseOilSaleForm';
 import ReadingsCashUpBar from '@/app/_components/admin/ReadingsCashUpBar';
 import DayHeader from '@/app/_components/admin/dashboard/DayHeader';
 import QuickEntry from '@/app/_components/admin/dashboard/QuickEntry';
+import CashInOutButton from '@/app/_components/admin/CashInOutButton';
 import KpiCard from '@/app/_components/admin/dashboard/KpiCard';
 import Notice from '@/app/_components/admin/dashboard/Notice';
 
@@ -202,8 +203,17 @@ export default function ReadingsView({
           date={date}
           accounts={bankAccounts}
           usedCategories={expenseCategories}
+          customers={customers}
         />
-      ) : null}
+      ) : (
+        /* A staff login has no expense or bank entry, but may still write cash that
+           went across the counter with a customer (the same rule as before: the
+           actions allow the data-entry role), so the button stands alone. */
+        <section aria-label="Cash with a customer" data-card className="panel mt-4 flex flex-wrap items-center gap-x-6 gap-y-3 px-5 py-4">
+          <p className="text-base font-semibold text-ink-800">Cash with a customer</p>
+          <CashInOutButton customers={customers} date={date} />
+        </section>
+      )}
 
       {dayGap || missingRate || carriedOver.length > 0 ? (
         <div className="mt-4 space-y-3">

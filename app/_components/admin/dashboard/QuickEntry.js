@@ -10,6 +10,7 @@ import ExpenseForm from '@/app/_components/admin/ExpenseForm';
 import BankTransactionForm from '@/app/_components/admin/BankTransactionForm';
 import DepositToBankForm from '@/app/_components/admin/DepositToBankForm';
 import DipChecker from '@/app/_components/admin/DipChecker';
+import CashInOutButton from '@/app/_components/admin/CashInOutButton';
 import { InEnglish, useI18n } from '@/app/_components/i18n/I18nProvider';
 
 /**
@@ -22,7 +23,8 @@ import { InEnglish, useI18n } from '@/app/_components/i18n/I18nProvider';
  * ALSO ON THE READINGS PAGE (Al Hakeem asked): while the day is entered, the
  * day's expense and bank entry are added too, so it is the same bar with `date`
  * set to the day on screen (which can be yesterday, after midnight) and a
- * heading of its own. Deposit to bank (081) moves cash from the safe into an
+ * heading of its own, and Raees Gullan's Money in / out beside them (`customers`).
+ * Deposit to bank (081) moves cash from the safe into an
  * account as one entry; its dialog is not translated yet and reads in English.
  */
 export default function QuickEntry({
@@ -30,6 +32,7 @@ export default function QuickEntry({
   usedCategories = [],
   tanks = [],
   dipCharts = {},
+  customers = null,
   date,
   heading,
   idPrefix = 'quick',
@@ -63,6 +66,14 @@ export default function QuickEntry({
                 <Icon name="stock" className="h-4 w-4" />
                 {t('dipCheck.button')}
               </Button>
+            </div>
+          ) : null}
+
+          {/* Cash across the counter with a customer, no fuel (Raees Gullan): only where
+              the page passes its customers, i.e. the Readings page. */}
+          {customers ? (
+            <div>
+              <CashInOutButton customers={customers} date={date} />
             </div>
           ) : null}
 
