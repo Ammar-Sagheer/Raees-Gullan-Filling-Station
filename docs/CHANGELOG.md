@@ -11,6 +11,13 @@ stock is calculated) see `README.md`. For the reusable patterns these
 entries establish (dialogs, table layout, buttons) see
 `docs/UI_CONVENTIONS.md`.
 
+## The Dashboard's collection panel says "Credit and cash given" (16 Oct 2026, Raees Gullan only)
+
+The panel's Credit figure is the readings' credit slips **plus** the customer debits written by hand
+(cash given, 088), so it never matched the "Credit" tile on Readings and the "On credit" tile on the
+Dashboard, which count reading slips only. The label now says what it adds up: "Credit and cash given",
+with "Credit slips plus cash given to customers" under it. Wording only; no figure changed.
+
 ## A bank deposit can say it never passed through the safe (090, 16 Oct 2026, Raees Gullan only)
 
 Carried from Mubeen's 910. A bank deposit has a nullable `paid_in_directly` flag, set by

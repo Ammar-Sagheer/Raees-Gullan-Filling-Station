@@ -81,7 +81,7 @@ export default function CollectionPanel({ collection, date }) {
               : 'Fuel at the nozzles'
           } />
           <Step label="Received" value={formatPKR(collection.received)} sub="Paid in by customers" />
-          <Step label="Credit" value={formatPKR(collection.total_credit)} sub="Not cash, on customers' accounts" />
+          <Step label="Credit and cash given" value={formatPKR(collection.total_credit)} sub="Credit slips plus cash given to customers" />
           <Step label="Expenses" value={formatPKR(collection.expenses)} sub="Paid out today" />
           {hasBank ? (
             <Step label="Paid into the bank" value={formatPKR(bank)} sub="Card, JazzCash, transfers" />
