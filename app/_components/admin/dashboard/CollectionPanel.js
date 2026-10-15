@@ -28,6 +28,7 @@ export default function CollectionPanel({ collection, date }) {
 
   const n = (value) => Number(value ?? 0);
   const still = n(collection.still_to_collect);
+  const toCollect = n(collection.to_collect);
   const noReadings = n(collection.readings) === 0;
   // Money paid straight into the bank (090): never in the drawer, so not asked of the
   // staff. Shown only on a day that has some; a database without 910 sends none.
@@ -38,7 +39,12 @@ export default function CollectionPanel({ collection, date }) {
     still > 0.005
       ? { tone: 'text-red-700', tile: TILE.alert, label: 'Still to collect', note: 'Not yet in the safe' }
       : still < -0.005
-        ? { tone: 'text-amber-800', tile: TILE.neutral, label: 'Handed in more than the day’s cash', note: 'Check Treasury for the day' }
+        ? toCollect < -0.005
+          ? // The day paid out more (credit, cash given, expenses) than it sold, so the
+            // staff hold nothing for it and nobody handed in too much (16 Oct 2026: 15 Oct,
+            // Rs 13,048, nothing handed in, read as "Handed in more than the day's cash").
+            { tone: 'text-amber-800', tile: TILE.neutral, label: 'Paid out more than the day’s sales', note: 'Paid from cash already in hand' }
+          : { tone: 'text-amber-800', tile: TILE.neutral, label: 'Handed in more than the day’s cash', note: 'Check Treasury for the day' }
         : { tone: 'text-brand-700', tile: TILE.money, label: 'Everything collected', note: 'The safe has it all' };
 
   return (

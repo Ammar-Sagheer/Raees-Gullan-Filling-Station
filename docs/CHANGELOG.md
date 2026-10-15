@@ -11,6 +11,14 @@ stock is calculated) see `README.md`. For the reusable patterns these
 entries establish (dialogs, table layout, buttons) see
 `docs/UI_CONVENTIONS.md`.
 
+## A day that paid out more than it sold no longer reads "Handed in more than the day's cash" (16 Oct 2026, Raees Gullan only)
+
+15 Oct: credit and cash given Rs 101,110 plus expenses Rs 19,600 against sales of Rs 107,662, so to collect was
+-Rs 13,048 and nothing had been handed in. The panel said "Handed in more than the day's cash", the opposite of
+what happened. When to collect itself is below zero the panel now says "Paid out more than the day's sales"
+("Paid from cash already in hand"); the old wording stays for a day where something was handed in and
+to collect was not negative. Wording only; no figure changed.
+
 ## The Dashboard's collection panel says "Credit and cash given" (16 Oct 2026, Raees Gullan only)
 
 The panel's Credit figure is the readings' credit slips **plus** the customer debits written by hand
