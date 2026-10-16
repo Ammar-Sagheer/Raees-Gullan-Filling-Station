@@ -298,6 +298,21 @@ export async function getReadingSheet(date) {
 }
 
 /**
+ * What the owner typed on the day sheet for one day (091), or null when that
+ * day was not saved from the sheet. Owner only (the table's own policy).
+ */
+export async function getDaySheet(date) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('day_sheets')
+    .select('payload, saved_at')
+    .eq('sheet_date', date)
+    .maybeSingle();
+  if (error) throw new Error(`Could not read the day sheet: ${error.message}`);
+  return data ?? null;
+}
+
+/**
  * The latest day with any nozzle reading saved, or null when there is none.
  * The Readings page opens on the day after it (see readings/page.js).
  */

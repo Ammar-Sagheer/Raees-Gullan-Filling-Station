@@ -428,6 +428,60 @@ export async function saveReading(_prevState, formData) {
 }
 
 /**
+ * Saves a whole day from the day sheet (091): the meters, the udhaar and wasool
+ * lists, local udhaar, pump and house expenses, the cash taken to the bank and
+ * the cash counted, in one database transaction (`save_day_sheet`). The sheet
+ * arrives as JSON from the form; the database checks every line again and
+ * answers with the day's figures, which this puts in the message so what is
+ * said here is what the books now hold.
+ */
+export async function saveDaySheet(_prevState, formData) {
+  try {
+    await requireRole(ROLES.SUPER_ADMIN);
+  } catch (error) {
+    return fail(error.message);
+  }
+
+  const date = text(formData, 'sheet_date');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return fail('The sheet has no date.');
+
+  let sheet;
+  try {
+    sheet = JSON.parse(text(formData, 'sheet'));
+  } catch {
+    return fail('The sheet could not be read. Try again.');
+  }
+  if (!sheet || typeof sheet !== 'object') return fail('The sheet could not be read. Try again.');
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc('save_day_sheet', { p_date: date, p_sheet: sheet });
+  if (error) return fail(describe(error, 'The day could not be saved.'));
+
+  revalidatePath('/admin/readings');
+  revalidatePath('/admin');
+  revalidatePath('/admin/customers');
+  revalidatePath('/admin/expenses');
+  revalidatePath('/admin/banking');
+  revalidatePath('/admin/treasury');
+
+  const money = (value) => `Rs ${Math.round(Number(value ?? 0)).toLocaleString('en-US')}`;
+  const diff = Math.round(Number(data?.difference ?? 0));
+  const diffText =
+    diff === 0
+      ? 'The cash counted matches the day.'
+      : diff > 0
+        ? `The cash counted is ${money(diff)} more than today's sheet makes (cash from earlier days).`
+        : `The cash counted is ${money(-diff)} less than today's sheet makes.`;
+  return {
+    ...ok(
+      `Saved. Sales ${money(data?.sales)}, credit ${money(data?.credit)}, received ${money(data?.received)}, ` +
+        `expenses ${money(data?.expenses)}, to the bank ${money(data?.bank)}. ${diffText}`,
+    ),
+    saved: true,
+  };
+}
+
+/**
  * Removing a reading is a super_admin-only correction. It will be refused if
  * its credit slips have already reached the ledger - that debt has to be
  * cancelled with an offsetting entry first, so the history stays intact.

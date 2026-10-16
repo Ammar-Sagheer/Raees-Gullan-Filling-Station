@@ -30,3 +30,12 @@ export const OFFER_URDU = false;
  * can), or null for none. See IntroVideo.js.
  */
 export const INTRO_VIDEO = null;
+
+/**
+ * DAY_SHEET_FROM - the first day the owner enters on the DAY SHEET (091): one
+ * form shaped like his register page, which saves the whole day in one go. The
+ * Readings page opens the sheet for the owner on this day and every day after
+ * it; earlier days, and a staff login, keep the readings page as it was. null
+ * for a pump that has no sheet (every pump but Raees Gullan, for now).
+ */
+export const DAY_SHEET_FROM = '2026-10-17';

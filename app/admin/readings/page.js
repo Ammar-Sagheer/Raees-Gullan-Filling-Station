@@ -11,9 +11,12 @@ import {
   getDipChartRanges,
   getBankAccounts,
   getExpenseCategories,
+  getDaySheet,
 } from '@/app/_lib/data-service';
-import { shiftISODate } from '@/app/_lib/date-helpers';
+import { shiftISODate, formatDate } from '@/app/_lib/date-helpers';
+import { DAY_SHEET_FROM } from '@/app/_lib/pump-settings';
 import ReadingsView from '@/app/_components/admin/readings/ReadingsView';
+import DaySheetView from '@/app/_components/admin/readings/DaySheetView';
 
 import { getI18n } from '@/app/_lib/i18n/server';
 
@@ -93,6 +96,28 @@ export default async function ReadingsPage({ searchParams }) {
     if (!earliestByTank[check.tank_id] || closes < earliestByTank[check.tank_id]) {
       earliestByTank[check.tank_id] = closes;
     }
+  }
+
+  // THE DAY SHEET (091): from DAY_SHEET_FROM the owner's Readings page is one form
+  // shaped like his register page. Earlier days, a staff login, and ?classic=1
+  // (the link on the sheet) keep the page as it was.
+  if (DAY_SHEET_FROM && isOwner && date >= DAY_SHEET_FROM && params?.classic !== '1') {
+    const daySheet = await getDaySheet(date).catch(() => null);
+    return (
+      <DaySheetView
+        date={date}
+        dateLabel={formatDate(date)}
+        sheetRows={sheet}
+        customers={customers}
+        bankAccounts={bankAccounts}
+        daySheet={daySheet}
+        dipTanks={dipTanks}
+        checksByTank={checksByTank}
+        earliestByTank={earliestByTank}
+        chartRanges={chartRanges}
+        lang={profile.language}
+      />
+    );
   }
 
   const savedReadingIds = sheet.filter((row) => row.reading_id).map((row) => row.reading_id);

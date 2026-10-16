@@ -22,6 +22,18 @@ several look simplifiable and were already tried that way once.
 > colon, a comma, brackets or a full stop instead, and in Urdu the Urdu comma
 > or brackets. See "Text the database wrote goes through `withoutDashes()`".
 
+## The day sheet (091, Raees Gullan only)
+
+A page that mirrors a paper register: one form, one section per thing the register has, named exactly as the
+register names it (Udhaar, Wasool, Local udhaar), a live total in the register's own arithmetic at the bottom,
+and one confirmation dialog that lists every nozzle before anything is written. Rules worth keeping if another
+pump gets one: a list line is a customer (or a name) and an amount, nothing else to choose; a nozzle left blank
+is "no sale", said out loud in the confirmation; the sale of a nozzle is `saleAmount()` (exact), the rest is
+`sumMoney()`; a figure never wraps (the sale is its own full-width line, not a fourth column); a customer
+picker takes the whole line on a phone and the amount sits under it; keys of rows a saved day opens with are
+their positions, never a counter that the server and the browser would number differently (that was a
+hydration error, found in the first render).
+
 ## The shared building blocks, at a glance
 
 Everything in `app/_components/ui/` is generic and has no idea what a pump is.

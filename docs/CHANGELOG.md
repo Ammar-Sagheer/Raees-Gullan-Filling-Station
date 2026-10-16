@@ -11,6 +11,57 @@ stock is calculated) see `README.md`. For the reusable patterns these
 entries establish (dialogs, table layout, buttons) see
 `docs/UI_CONVENTIONS.md`.
 
+## The day sheet: the owner's register page as one form (091, 17 Oct 2026, Raees Gullan only)
+
+**Why.** Entering 2 to 16 Oct for Raees, the same three mistakes came back each day, because the app made him
+choose a screen and a button for each thing his register page holds: credit entered under "Money received"
+(it LOWERS what the customer owes; 15 and 16 Oct, Rs 109,610 and Rs 31,175), local udhaar entered as customer
+credit (Ayaz Rs 8,000, Khan Unar Rs 500), a total typed beside its own parts (a Rs 7,450 "pump" line that was
+the pump items plus the Rs 6,000 vehicle rent, also entered one by one), and a fuel price not set for the day
+(16 Oct sold at petrol 397.90 and diesel 405.60 on the old rates). His own page was right every time; the app
+was wrong because of where each line went.
+
+**What.** From 17 Oct (`DAY_SHEET_FROM`) his Readings page is one form (`DaySheetForm.js`) with the sections of
+his register: Meters (closing and rate per nozzle; a nozzle left blank did not sell), Udhaar, Wasool, Local
+udhaar, Pump expenses, House expenses, Bank and cash, and "The day, as in the register", his own arithmetic
+(sale + wasool - udhaar - local - pump - house - bank = cash from today, against the cash he counted). Save
+asks first (`Check and save the day`), listing every nozzle with its litres, then writes everything through
+`save_day_sheet()` (091), ONE transaction, owner only:
+
+| On the sheet | Written as |
+|---|---|
+| Meters | `create_nozzle_reading`, no slips; a rate that is not the day's price is set as the new price (as Settings) |
+| Udhaar | a debit on the customer, note "Udhaar, 17 Oct" |
+| Wasool | a credit on the customer, `is_payment`, note "Wasool, 17 Oct" |
+| Local udhaar | an expense, "Local expenses", note = the name |
+| Pump / house | an expense, "Pump expenses" / "Household expenses", note = the item |
+| Cash to the bank | a deposit marked `paid_in_directly` (090) |
+| Cash counted | a treasury entry "Cash counted into the safe" (shift_closing) |
+
+A customer line can only be udhaar or wasool, so the wrong-button mistakes cannot happen. The Dashboard reads
+the same rows (`get_day_collection`), so it cannot disagree with the sheet. In a test against a scratch
+database a bare day, a full day, a second save with changes, an identical second save (no new ledger rows), a
+bad line after good ones (nothing saved) and a non-owner were all checked.
+
+**Saving a day again** (`day_sheets` keeps what was typed and the id of every row written): lines that are the
+same stay; a changed customer line is cancelled with a correction entry (the ledger only ever corrects) and
+written again; expenses, bank and safe rows are removed and written again; a changed reading is replaced. A day
+that already has readings the sheet did not write is refused (use `?classic=1`).
+
+**What stayed the same on purpose.** Earlier days (up to 16 Oct) and a staff login keep the old Readings page; the
+sheet links to it ("Open the old Readings page for this day") and the old page is `?classic=1`. The dip stays its
+own dialog (`DailyDipButton`). Credit is customer and amount only, as in his register: no litres, no nozzle.
+A day whose yesterday is not fully entered shows a warning and cannot be saved, because the openings would be an
+older day's.
+
+**Not built.** Oil sales and the old forms' test litres are not on the sheet (his pump sells neither yet; the
+old page has them). `day_sheets` is a new table the backup does not list: it only reopens a saved day in the
+form, every figure is in the ordinary tables.
+
+**Offline build.** One row: migration 091, `DaySheetForm.js`, `DaySheetView.js`, `saveDaySheet`, `getDaySheet`,
+the `DAY_SHEET_FROM` switch in `pump-settings.js` and the branch in `readings/page.js`. Not for another pump
+until it has run at Raees's for a few weeks.
+
 ## A day that paid out more than it sold no longer reads "Handed in more than the day's cash" (16 Oct 2026, Raees Gullan only)
 
 15 Oct: credit and cash given Rs 101,110 plus expenses Rs 19,600 against sales of Rs 107,662, so to collect was
