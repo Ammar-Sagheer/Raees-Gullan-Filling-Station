@@ -706,6 +706,7 @@ export async function createPurchase(_prevState, formData) {
   if (error) return refuse(describe(error, t('saidPurchase.saveFailed')));
 
   revalidatePath('/admin/purchases');
+  revalidatePath('/admin/readings');
   revalidatePath('/admin');
   revalidatePath('/admin/stock-checks');
   revalidatePath('/admin/suppliers');

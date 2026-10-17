@@ -3,6 +3,7 @@ import Link from 'next/link';
 import DayHeader from '@/app/_components/admin/dashboard/DayHeader';
 import DailyDipButton from '@/app/_components/admin/DailyDipButton';
 import DaySheetForm from '@/app/_components/admin/DaySheetForm';
+import PurchaseForm from '@/app/_components/admin/PurchaseForm';
 import Notice from '@/app/_components/admin/dashboard/Notice';
 import { shiftISODate, formatDate } from '@/app/_lib/date-helpers';
 
@@ -23,6 +24,11 @@ export default function DaySheetView({
   customers,
   bankAccounts,
   daySheet,
+  tanks = [],
+  deliveries = [],
+  dips = {},
+  purchaseTanks = [],
+  suppliers = [],
   dipTanks = [],
   checksByTank = {},
   earliestByTank = {},
@@ -40,6 +46,7 @@ export default function DaySheetView({
 
   const nozzles = sheetRows.map((row) => ({
     nozzle_id: row.nozzle_id,
+    tank_id: row.tank_id,
     label: `Unit ${row.unit_number} \u00b7 Nozzle ${row.nozzle_label}`,
     fuel_type: row.fuel_type,
     opening: row.opening_reading,
@@ -49,16 +56,6 @@ export default function DaySheetView({
   return (
     <>
       <DayHeader date={date} basePath="/admin/readings" title="Day sheet" icon="readings" lang={lang}>
-        <div className="flex flex-wrap items-center gap-2">
-          <DailyDipButton
-            tanks={dipTanks}
-            date={date}
-            checksByTank={checksByTank}
-            earliestByTank={earliestByTank}
-            chartRanges={chartRanges}
-            canManage
-          />
-        </div>
       </DayHeader>
 
       <div className="mt-4">
@@ -102,10 +99,24 @@ export default function DaySheetView({
             date={date}
             dateLabel={dateLabel}
             nozzles={nozzles}
+            tanks={tanks}
+            deliveries={deliveries}
+            dips={dips}
             customers={customers}
             bankAccounts={bankAccounts}
             saved={daySheet?.payload ?? null}
             savedAt={daySheet?.saved_at ?? null}
+            dipButton={
+              <DailyDipButton
+                tanks={dipTanks}
+                date={date}
+                checksByTank={checksByTank}
+                earliestByTank={earliestByTank}
+                chartRanges={chartRanges}
+                canManage
+              />
+            }
+            deliveryButton={<PurchaseForm tanks={purchaseTanks} suppliers={suppliers} defaultDate={date} />}
             blocked={gap ? `${formatDate(yesterday)} is not fully entered yet, so the openings are wrong. Enter it first.` : null}
           />
           </>

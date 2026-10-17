@@ -25,7 +25,7 @@ import { rich } from '@/app/_lib/i18n/core';
  * delivery is also logged once a day at most, not something read continuously
  * the way the table is, so it does not need to stand open on the page either.
  */
-export default function PurchaseForm({ tanks, suppliers = [] }) {
+export default function PurchaseForm({ tanks, suppliers = [], defaultDate = null }) {
     const formRef = useRef(null);
   const { t, fmt } = useI18n();
   const L = (n) => fmt.litres(n ?? 0);
@@ -149,7 +149,7 @@ export default function PurchaseForm({ tanks, suppliers = [] }) {
               name="purchase_date"
               type="date"
               required
-              defaultValue={today}
+              defaultValue={defaultDate ?? today}
               className="input"
             />
           </div>

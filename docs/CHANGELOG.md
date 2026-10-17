@@ -43,6 +43,31 @@ the same rows (`get_day_collection`), so it cannot disagree with the sheet. In a
 database a bare day, a full day, a second save with changes, an identical second save (no new ledger rows), a
 bad line after good ones (nothing saved) and a non-owner were all checked.
 
+**Laid out as his two register pages (17 Oct 2026, same day, asked for by the owner).** The first cut grouped
+things by kind; he asked for the pages as he writes them, so he makes no mistakes. The sheet now follows the paper,
+box for box, each box named in English with his Urdu beside it:
+
+| Register box | On the sheet |
+|---|---|
+| Dip (ڈپ), one box per fuel | The day's dip of each tank in mm and litres, with the fuel's total; "Record the dip" opens the dip dialog (the dip is still the same form and checks) |
+| Meters (موجودہ / سابقہ / سیل) | Previous, Current and Sale for each nozzle, a Total per fuel; a blank nozzle did not sell |
+| Stock position (اسٹاک پوزیشن) | Stock, Purchase, Total, Sale, Balance for each tank, all worked out (nothing to type) |
+| Recovery (وصولی) | The wasool list |
+| Daily sale (روزانو فروخت) | The rate to type for each fuel (one rate per fuel, as on the paper, instead of one per nozzle), litres and amount worked out, total litres, total amount |
+| Date, Fillers (فلرز) | The date, and the fillers' names (optional, kept with the sheet) |
+| Invoice detail (تفصیل انوائس) | The day's tanker deliveries; "Record a delivery" is the Purchases dialog with the day's date filled in (it saves on its own and the supplier account follows) |
+| Udhaar, Local udhaar | As before |
+| Pump expenses, House expenses | As before |
+
+The front page's boxes sit side by side on a laptop (the paper's two columns) and stack on a phone; the back page keeps
+Udhaar and Local udhaar on the left and Pump and House expenses on the right, with Bank and cash and the day's
+arithmetic under them. Nothing in the database changed for this: `save_day_sheet` already took one rate per nozzle
+(now the fuel's rate) and stores whatever else the form sends. `createPurchase` also refreshes the Readings page so a
+delivery shows in Invoice detail at once; `PurchaseForm` takes an optional `defaultDate`.
+
+**Not on the sheet (still on their own pages):** the draft number and vehicle number of the paper's invoice box (the
+Purchases form has an invoice number only), the manager's signature, oil sales.
+
 **Saving a day again** (`day_sheets` keeps what was typed and the id of every row written): lines that are the
 same stay; a changed customer line is cancelled with a correction entry (the ledger only ever corrects) and
 written again; expenses, bank and safe rows are removed and written again; a changed reading is replaced. A day

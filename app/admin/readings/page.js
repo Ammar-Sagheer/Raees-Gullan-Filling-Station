@@ -12,6 +12,9 @@ import {
   getBankAccounts,
   getExpenseCategories,
   getDaySheet,
+  getTanks,
+  getPurchases,
+  getSupplierNames,
 } from '@/app/_lib/data-service';
 import { shiftISODate, formatDate } from '@/app/_lib/date-helpers';
 import { DAY_SHEET_FROM } from '@/app/_lib/pump-settings';
@@ -102,7 +105,31 @@ export default async function ReadingsPage({ searchParams }) {
   // shaped like his register page. Earlier days, a staff login, and ?classic=1
   // (the link on the sheet) keep the page as it was.
   if (DAY_SHEET_FROM && isOwner && date >= DAY_SHEET_FROM && params?.classic !== '1') {
-    const daySheet = await getDaySheet(date).catch(() => null);
+    const [daySheet, allTanks, purchases, suppliers] = await Promise.all([
+      getDaySheet(date).catch(() => null),
+      getTanks().catch(() => []),
+      getPurchases().catch(() => []),
+      getSupplierNames().catch(() => []),
+    ]);
+    // The day's tanker deliveries, for Invoice detail and Stock position.
+    const deliveries = purchases
+      .filter((purchase) => purchase.purchase_date === date)
+      .map((purchase) => ({
+        id: purchase.id,
+        tank_id: purchase.tank_id,
+        tank_name: purchase.tank?.name ?? '',
+        litres: purchase.quantity_litres,
+        invoice_number: purchase.invoice_number,
+        supplier_name: purchase.supplier_name,
+        total_cost: purchase.total_cost,
+      }));
+    // The day's dip per tank: millimetres and litres, as the register's top boxes.
+    const dips = Object.fromEntries(
+      Object.entries(checksByTank).map(([tankId, check]) => [
+        tankId,
+        { mm: check.dip_mm, litres: check.actual_dip_reading },
+      ]),
+    );
     return (
       <DaySheetView
         date={date}
@@ -111,10 +138,20 @@ export default async function ReadingsPage({ searchParams }) {
         customers={customers}
         bankAccounts={bankAccounts}
         daySheet={daySheet}
+        tanks={dipTanks.map((tank) => ({
+          id: tank.id,
+          name: tank.name,
+          fuel_type: tank.fuel_type,
+          opening_stock: tank.expected_if_morning ?? null,
+        }))}
+        deliveries={deliveries}
+        dips={dips}
         dipTanks={dipTanks}
         checksByTank={checksByTank}
         earliestByTank={earliestByTank}
         chartRanges={chartRanges}
+        purchaseTanks={allTanks}
+        suppliers={suppliers}
         lang={profile.language}
       />
     );
