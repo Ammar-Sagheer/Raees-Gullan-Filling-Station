@@ -73,6 +73,14 @@ carries its Urdu caption first with the English smaller beneath, Daily sale is a
 Stock position is a card per tank under 40rem (the table from there up), and the remove buttons are 44 px. Rendered at
 412 and 360 px: nothing clipped but sr-only labels.
 
+**Slips, not vehicles (093, 18 Oct 2026).** Raees: a customer can have several drivers and cars on one account, so he
+wants the slip number and the amount, not the vehicle. On the day sheet the Udhaar box now takes a customer once and every
+slip under them (slip number and amount, "+ Add a slip"), with each customer's slip count and total and the box's total
+beneath. The slip number is kept on the ledger entry (`ledger_entries.slip_number`, nullable) and in its note ("Udhaar,
+18 Oct, slip 1224"). Saving the day again treats a changed slip number as a changed line. The customer's page shows a
+Slips panel where Vehicles was: slips today (count and rupees) and the list of slips, newest first; `VehiclesPanel.js` is
+kept, unused. Migration 093 changes `save_day_sheet()` and adds the column.
+
 **Cash, not fuel (092, 17 Oct 2026).** The register lists cash handed to a customer in the udhaar box with the fuel, and
 the old "Money taken" button wrote "Cash given" on the statement. An Udhaar line on the sheet now has a tick, "Cash, not
 fuel": ticked, the ledger note is "Cash given, 17 Oct" (the same words `recordCashGiven` wrote; the Dashboard counts it

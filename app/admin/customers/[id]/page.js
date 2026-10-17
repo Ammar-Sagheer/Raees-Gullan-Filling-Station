@@ -63,6 +63,25 @@ export default async function CustomerDetailPage({ params, searchParams }) {
   const customer = statement?.customer;
   if (!customer) notFound();
 
+  // The slips (093): every debit that is a credit slip or a day-sheet udhaar line,
+  // not cancelled, not cash handed out, newest first.
+  const cancelled = new Set(allEntries.filter((entry) => entry.corrects_entry_id).map((entry) => entry.corrects_entry_id));
+  const slips = allEntries
+    .filter(
+      (entry) =>
+        entry.entry_type === 'debit' &&
+        !entry.corrects_entry_id &&
+        !cancelled.has(entry.id) &&
+        (entry.credit_sale_id || entry.slip_number || /^Udhaar,/i.test(entry.note ?? '')),
+    )
+    .reverse()
+    .map((entry) => ({
+      id: entry.id,
+      date: entry.entry_date,
+      slipNumber: entry.slip_number ?? null,
+      amount: Number(entry.amount),
+    }));
+
   return (
     <CustomerView
       customer={customer}
@@ -78,6 +97,7 @@ export default async function CustomerDetailPage({ params, searchParams }) {
       statementError={statementError}
       vehicles={vehicles}
       vehicleTotals={vehicleTotals}
+      slips={slips}
     />
   );
 }

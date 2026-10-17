@@ -9,7 +9,7 @@ import EditCustomerButton from '@/app/_components/admin/EditCustomerButton';
 import PrintStatementButton from '@/app/_components/admin/PrintStatementButton';
 import TitleHeader from '@/app/_components/admin/dashboard/TitleHeader';
 import SectionHeader from '@/app/_components/admin/dashboard/SectionHeader';
-import VehiclesPanel from '@/app/_components/admin/customers/VehiclesPanel';
+import SlipsPanel from '@/app/_components/admin/customers/SlipsPanel';
 import FigureTile from '@/app/_components/admin/dashboard/FigureTile';
 import { TILE } from '@/app/_components/admin/dashboard/tones';
 
@@ -39,6 +39,7 @@ export default function CustomerView({
   statementError,
   vehicles = [],
   vehicleTotals = [],
+  slips = [],
 }) {
   const vehicleNames = Object.fromEntries(vehicles.map((vehicle) => [vehicle.id, vehicle.vehicle_number]));
   const activeVehicles = vehicles.filter((vehicle) => vehicle.is_active).length;
@@ -197,21 +198,16 @@ export default function CustomerView({
         </div>
       </div>
 
-      {/* ---- vehicles (073) ---- */}
-      <section aria-labelledby="vehicles-heading" className="@container mt-12">
+      {/* ---- slips (093): where the Vehicles panel was; the panel is kept, unused ---- */}
+      <section aria-labelledby="slips-heading" className="@container mt-12">
         <SectionHeader
-          id="vehicles-heading"
-          icon="vehicle"
+          id="slips-heading"
+          icon="list"
           tone="credit"
-          title="Vehicles"
-          description="Every vehicle on this account, and what each has taken on credit. One account, one balance: each slip just says which vehicle it was."
+          title="Slips"
+          description="The slip number and amount of every fill on credit, and how many this customer took today. One account, one balance."
         />
-        <VehiclesPanel
-          customerId={customer.id}
-          vehicles={vehicles}
-          totals={vehicleTotals}
-          isOwner={isOwner}
-        />
+        <SlipsPanel slips={slips} asOf={asOf} />
       </section>
 
       {/* ---- history ---- */}
