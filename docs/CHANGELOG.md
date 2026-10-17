@@ -73,6 +73,12 @@ carries its Urdu caption first with the English smaller beneath, Daily sale is a
 Stock position is a card per tank under 40rem (the table from there up), and the remove buttons are 44 px. Rendered at
 412 and 360 px: nothing clipped but sr-only labels.
 
+**Slips on the Recovery box too (094, 18 Oct 2026).** Raees asked for the same on payments: the Recovery box takes a customer
+once and each payment under them (slip number and amount, "+ Add a payment"), kept in `ledger_entries.slip_number` and the
+note ("Wasool, 18 Oct, slip 1224"). The customer's Slips panel lists payments with the slips, a payment marked "paid back"
+under its number, and shows "Paid back today" beside the slips-today figures. Read as: the slip number a payment settles
+or its receipt number; he has not said which. Migration 094 changes `save_day_sheet()` only.
+
 **Slips, not vehicles (093, 18 Oct 2026).** Raees: a customer can have several drivers and cars on one account, so he
 wants the slip number and the amount, not the vehicle. On the day sheet the Udhaar box now takes a customer once and every
 slip under them (slip number and amount, "+ Add a slip"), with each customer's slip count and total and the box's total

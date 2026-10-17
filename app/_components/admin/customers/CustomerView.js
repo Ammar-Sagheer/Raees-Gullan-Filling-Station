@@ -40,6 +40,7 @@ export default function CustomerView({
   vehicles = [],
   vehicleTotals = [],
   slips = [],
+  payments = [],
 }) {
   const vehicleNames = Object.fromEntries(vehicles.map((vehicle) => [vehicle.id, vehicle.vehicle_number]));
   const activeVehicles = vehicles.filter((vehicle) => vehicle.is_active).length;
@@ -205,9 +206,9 @@ export default function CustomerView({
           icon="list"
           tone="credit"
           title="Slips"
-          description="The slip number and amount of every fill on credit, and how many this customer took today. One account, one balance."
+          description="The slip number and amount of every fill on credit and every payment, and how many slips this customer took today. One account, one balance."
         />
-        <SlipsPanel slips={slips} asOf={asOf} />
+        <SlipsPanel slips={slips} payments={payments} asOf={asOf} />
       </section>
 
       {/* ---- history ---- */}

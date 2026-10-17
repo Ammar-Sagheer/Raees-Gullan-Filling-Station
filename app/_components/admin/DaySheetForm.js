@@ -190,7 +190,11 @@ export default function DaySheetForm({
     () => groups.flatMap((g) => g.lines.map((l) => ({ key: l.key, who: g.who, amount: l.amount, cash: l.cash, slip: l.slip }))),
     [groups],
   );
-  const [received, setReceived] = useState(() => toRows(saved?.received, 'customer_id'));
+  const [receivedGroups, setReceivedGroups] = useState(() => groupCredit(saved?.received));
+  const received = useMemo(
+    () => receivedGroups.flatMap((g) => g.lines.map((l) => ({ key: l.key, who: g.who, amount: l.amount, slip: l.slip }))),
+    [receivedGroups],
+  );
   const [local, setLocal] = useState(() => toRows(saved?.local, 'name'));
   const [pump, setPump] = useState(() => toRows(saved?.pump, 'name'));
   const [house, setHouse] = useState(() => toRows(saved?.house, 'name'));
@@ -336,7 +340,7 @@ export default function DaySheetForm({
     })),
     fillers: fillers.trim(),
     credit: complete(credit).map((r) => ({ customer_id: r.who, amount: num(r.amount), cash: Boolean(r.cash), slip: String(r.slip ?? '').trim() || null })),
-    received: complete(received).map((r) => ({ customer_id: r.who, amount: num(r.amount) })),
+    received: complete(received).map((r) => ({ customer_id: r.who, amount: num(r.amount), slip: String(r.slip ?? '').trim() || null })),
     local: complete(local).map((r) => ({ name: r.who.trim(), amount: num(r.amount) })),
     pump: complete(pump).map((r) => ({ name: r.who.trim(), amount: num(r.amount) })),
     house: complete(house).map((r) => ({ name: r.who.trim(), amount: num(r.amount) })),
@@ -550,17 +554,23 @@ export default function DaySheetForm({
 
       {/* ---- RECOVERY (وصولی) beside DAILY SALE (روزانو فروخت) ------------------------ */}
       <div className="grid gap-4 lg:grid-cols-2">
-        <CustomerList
-          en="Recovery"
-          ur="وصولی"
-          hint="Money a customer PAID BACK today. Not fuel and not cash given out."
-          hintUr="جو رقم گاہک نے آج واپس دی۔ تیل نہیں، اور دی ہوئی نقد رقم نہیں۔"
-          rows={received}
-          setRows={setReceived}
+        <SlipGroups
+          groups={receivedGroups}
+          setGroups={setReceivedGroups}
           customers={customers}
           total={totals.receivedTotal}
-          totalLabel="Wasool total / وصولی کا ٹوٹل"
           idPrefix="received"
+          en="Recovery"
+          ur="وصولی"
+          hint="Money a customer PAID BACK today. Pick the customer once, then each payment under them: slip number and amount. Not fuel and not cash given out."
+          hintUr="جو رقم گاہک نے آج واپس دی۔ گاہک ایک بار چنیں، پھر اس کے نیچے ہر ادائیگی: پرچی نمبر اور رقم۔ تیل نہیں، اور دی ہوئی نقد رقم نہیں۔"
+          totalLabel="Wasool total / وصولی کا ٹوٹل"
+          slipHint="Slip no."
+          cashTick={false}
+          addLabel="+ Add a payment · ادائیگی شامل کریں"
+          unitOne="payment"
+          unitMany="payments"
+          unitUr="ادائیگیاں"
         />
         <Box
           en="Daily sale"
@@ -915,62 +925,23 @@ const removeButton = (onClick) => (
   </button>
 );
 
-function CustomerList({ en, ur, hint, hintUr, rows, setRows, customers, total, totalLabel, idPrefix }) {
-  const update = (key, patch) => setRows(rows.map((row) => (row.key === key ? { ...row, ...patch } : row)));
-  return (
-    <Box en={en} ur={ur} hint={hint} hintUr={hintUr}>
-      <ul className="space-y-2">
-        {rows.map((row, index) => (
-          <li key={row.key} className="flex flex-wrap items-end gap-2">
-            <div className="min-w-0 basis-full sm:basis-0 sm:flex-1">
-              <label className="label" htmlFor={`${idPrefix}-who-${row.key}`}>
-                {index === 0 ? <Caption en="Customer" ur="گاہک" /> : <span className="sr-only">Customer</span>}
-              </label>
-              <select
-                id={`${idPrefix}-who-${row.key}`}
-                className="input"
-                value={row.who}
-                onChange={(event) => update(row.key, { who: event.target.value })}
-              >
-                <option value="">Choose the customer / گاہک چنیں</option>
-                {customers.map((customer) => (
-                  <option key={customer.id} value={customer.id}>
-                    {customerLabel(customer)}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="w-36 flex-1 sm:w-32 sm:flex-none">
-              <label className="label" htmlFor={`${idPrefix}-amount-${row.key}`}>
-                {index === 0 ? <Caption en="Amount" ur="رقم" /> : <span className="sr-only">Amount</span>}
-              </label>
-              <NumberInput
-                id={`${idPrefix}-amount-${row.key}`}
-                step="1"
-                min="1"
-                value={row.amount}
-                onChange={(event) => update(row.key, { amount: event.target.value })}
-                className="input-number"
-                placeholder="0"
-              />
-            </div>
-            {removeButton(() => setRows(rows.filter((r) => r.key !== row.key)))}
-          </li>
-        ))}
-      </ul>
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-        <Button variant="secondary" type="button" onClick={() => setRows([...rows, blank()])}>
-          + Add a customer · گاہک شامل کریں
-        </Button>
-        <p className="text-base text-ink-700">
-          {totalLabel}: <span className="tabular font-bold text-ink-900">{formatPKR(total)}</span>
-        </p>
-      </div>
-    </Box>
-  );
-}
-
-function SlipGroups({ groups, setGroups, customers, total }) {
+function SlipGroups({
+  groups,
+  setGroups,
+  customers,
+  total,
+  idPrefix = 'credit',
+  en = 'Udhaar',
+  ur = 'تفصیل ادھار',
+  hint = 'Pick the customer once, then put each slip under them: slip number and amount. Tick Cash for money handed over, not fuel.',
+  hintUr = 'گاہک ایک بار چنیں، پھر اس کے نیچے ہر پرچی لکھیں: پرچی نمبر اور رقم۔ رقم نقد دی ہو تو "نقد رقم، تیل نہیں" پر نشان لگائیں۔',
+  totalLabel = 'Udhaar total / ادھار کا ٹوٹل',
+  cashTick = true,
+  addLabel = '+ Add a slip · پرچی شامل کریں',
+  unitOne = 'slip',
+  unitMany = 'slips',
+  unitUr = 'پرچیاں',
+}) {
   const updateGroup = (key, patch) => setGroups(groups.map((g) => (g.key === key ? { ...g, ...patch } : g)));
   const updateLine = (groupKey, lineKey, patch) =>
     setGroups(
@@ -985,23 +956,18 @@ function SlipGroups({ groups, setGroups, customers, total }) {
         .filter((g) => g.lines.length > 0),
     );
   return (
-    <Box
-      en="Udhaar"
-      ur="تفصیل ادھار"
-      hint="Pick the customer once, then put each slip under them: slip number and amount. Tick Cash for money handed over, not fuel."
-      hintUr="گاہک ایک بار چنیں، پھر اس کے نیچے ہر پرچی لکھیں: پرچی نمبر اور رقم۔ رقم نقد دی ہو تو &quot;نقد رقم، تیل نہیں&quot; پر نشان لگائیں۔"
-    >
+    <Box en={en} ur={ur} hint={hint} hintUr={hintUr}>
       <ul className="space-y-3">
         {groups.map((group) => {
           const amounts = group.lines.map((l) => roundRupees(num(l.amount) ?? 0));
           const filled = group.lines.filter((l) => (num(l.amount) ?? 0) > 0).length;
           return (
             <li key={group.key} className="rounded-xl bg-ink-50 p-3 ring-1 ring-inset ring-ink-200/70">
-              <label className="label" htmlFor={`credit-who-${group.key}`}>
+              <label className="label" htmlFor={`${idPrefix}-who-${group.key}`}>
                 <Caption en="Customer" ur="گاہک" />
               </label>
               <select
-                id={`credit-who-${group.key}`}
+                id={`${idPrefix}-who-${group.key}`}
                 className="input"
                 value={group.who}
                 onChange={(event) => updateGroup(group.key, { who: event.target.value })}
@@ -1018,11 +984,11 @@ function SlipGroups({ groups, setGroups, customers, total }) {
                 {group.lines.map((line, index) => (
                   <li key={line.key} className="flex flex-wrap items-end gap-2">
                     <div className="w-28 flex-1 sm:w-32 sm:flex-none">
-                      <label className="label" htmlFor={`credit-slip-${line.key}`}>
+                      <label className="label" htmlFor={`${idPrefix}-slip-${line.key}`}>
                         {index === 0 ? <Caption en="Slip no." ur="پرچی نمبر" /> : <span className="sr-only">Slip number</span>}
                       </label>
                       <input
-                        id={`credit-slip-${line.key}`}
+                        id={`${idPrefix}-slip-${line.key}`}
                         type="text"
                         inputMode="numeric"
                         autoComplete="off"
@@ -1034,11 +1000,11 @@ function SlipGroups({ groups, setGroups, customers, total }) {
                       />
                     </div>
                     <div className="w-36 flex-1 sm:w-32 sm:flex-none">
-                      <label className="label" htmlFor={`credit-amount-${line.key}`}>
+                      <label className="label" htmlFor={`${idPrefix}-amount-${line.key}`}>
                         {index === 0 ? <Caption en="Amount" ur="رقم" /> : <span className="sr-only">Amount</span>}
                       </label>
                       <NumberInput
-                        id={`credit-amount-${line.key}`}
+                        id={`${idPrefix}-amount-${line.key}`}
                         step="1"
                         min="1"
                         value={line.amount}
@@ -1048,12 +1014,13 @@ function SlipGroups({ groups, setGroups, customers, total }) {
                       />
                     </div>
                     {removeButton(() => removeLine(group.key, line.key))}
+                    {cashTick ? (
                     <label
                       className="flex min-h-11 basis-full items-center gap-3 rounded-lg bg-white px-3 text-base text-ink-800"
-                      htmlFor={`credit-cash-${line.key}`}
+                      htmlFor={`${idPrefix}-cash-${line.key}`}
                     >
                       <input
-                        id={`credit-cash-${line.key}`}
+                        id={`${idPrefix}-cash-${line.key}`}
                         type="checkbox"
                         className="h-6 w-6 shrink-0"
                         checked={line.cash}
@@ -1063,6 +1030,7 @@ function SlipGroups({ groups, setGroups, customers, total }) {
                         Cash, not fuel <Ur>نقد رقم، تیل نہیں</Ur>
                       </span>
                     </label>
+                    ) : null}
                   </li>
                 ))}
               </ul>
@@ -1073,10 +1041,10 @@ function SlipGroups({ groups, setGroups, customers, total }) {
                   type="button"
                   onClick={() => updateGroup(group.key, { lines: [...group.lines, blankLine()] })}
                 >
-                  + Add a slip · پرچی شامل کریں
+                  {addLabel}
                 </Button>
                 <p className="text-base text-ink-700">
-                  {filled} {filled === 1 ? 'slip' : 'slips'} <Ur>پرچیاں</Ur>:{' '}
+                  {filled} {filled === 1 ? unitOne : unitMany} <Ur>{unitUr}</Ur>:{' '}
                   <span className="tabular font-bold text-ink-900">{formatPKR(sumMoney(amounts))}</span>
                 </p>
               </div>
@@ -1089,7 +1057,7 @@ function SlipGroups({ groups, setGroups, customers, total }) {
           + Add a customer · گاہک شامل کریں
         </Button>
         <p className="text-base text-ink-700">
-          Udhaar total / ادھار کا ٹوٹل: <span className="tabular font-bold text-ink-900">{formatPKR(total)}</span>
+          {totalLabel}: <span className="tabular font-bold text-ink-900">{formatPKR(total)}</span>
         </p>
       </div>
     </Box>

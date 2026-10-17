@@ -80,6 +80,21 @@ export default async function CustomerDetailPage({ params, searchParams }) {
       date: entry.entry_date,
       slipNumber: entry.slip_number ?? null,
       amount: Number(entry.amount),
+      paid: false,
+    }));
+  // The payments, against their slip number when they have one (094).
+  const payments = allEntries
+    .filter(
+      (entry) =>
+        entry.entry_type === 'credit' && entry.is_payment === true && !entry.corrects_entry_id && !cancelled.has(entry.id),
+    )
+    .reverse()
+    .map((entry) => ({
+      id: entry.id,
+      date: entry.entry_date,
+      slipNumber: entry.slip_number ?? null,
+      amount: Number(entry.amount),
+      paid: true,
     }));
 
   return (
@@ -98,6 +113,7 @@ export default async function CustomerDetailPage({ params, searchParams }) {
       vehicles={vehicles}
       vehicleTotals={vehicleTotals}
       slips={slips}
+      payments={payments}
     />
   );
 }
