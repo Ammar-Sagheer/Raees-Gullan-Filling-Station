@@ -68,6 +68,18 @@ delivery shows in Invoice detail at once; `PurchaseForm` takes an optional `defa
 **Not on the sheet (still on their own pages):** the draft number and vehicle number of the paper's invoice box (the
 Purchases form has an invoice number only), the manager's signature, oil sales.
 
+**Phone layout and Urdu hints on the day sheet (17 Oct 2026).** Raees enters on a 6.8 inch phone (about 412 px), so every box
+carries its Urdu caption first with the English smaller beneath, Daily sale is a two column grid with Amount full width,
+Stock position is a card per tank under 40rem (the table from there up), and the remove buttons are 44 px. Rendered at
+412 and 360 px: nothing clipped but sr-only labels.
+
+**Cash, not fuel (092, 17 Oct 2026).** The register lists cash handed to a customer in the udhaar box with the fuel, and
+the old "Money taken" button wrote "Cash given" on the statement. An Udhaar line on the sheet now has a tick, "Cash, not
+fuel": ticked, the ledger note is "Cash given, 17 Oct" (the same words `recordCashGiven` wrote; the Dashboard counts it
+as credit, 088); unticked it stays "Udhaar, 17 Oct". Migration 092 changes `save_day_sheet()` only. Saving a day again
+treats a line whose tick changed as a changed line (cancelled by a correction entry, written again). Money received is the
+Wasool list; Money taken is the ticked Udhaar line.
+
 **Saving a day again** (`day_sheets` keeps what was typed and the id of every row written): lines that are the
 same stay; a changed customer line is cancelled with a correction entry (the ledger only ever corrects) and
 written again; expenses, bank and safe rows are removed and written again; a changed reading is replaced. A day

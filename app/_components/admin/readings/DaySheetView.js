@@ -55,7 +55,7 @@ export default function DaySheetView({
 
   return (
     <>
-      <DayHeader date={date} basePath="/admin/readings" title="Day sheet" icon="readings" lang={lang}>
+      <DayHeader date={date} basePath="/admin/readings" title="Day sheet · روزانہ شیٹ" icon="readings" lang={lang}>
       </DayHeader>
 
       <div className="mt-4">
@@ -64,6 +64,9 @@ export default function DaySheetView({
             <p>
               The readings for this day were saved on the old Readings page, so the day sheet cannot change them.
               Open the old page for this day to look at it or correct it.
+            </p>
+            <p lang="ur" dir="rtl" className="mt-1">
+              اس دن کی ریڈنگ پرانے ریڈنگ صفحے پر محفوظ ہوئی تھی، اس لیے یہ شیٹ اسے نہیں بدل سکتی۔ اسے دیکھنے یا درست کرنے کے لیے اس دن کا پرانا صفحہ کھولیں۔
             </p>
             <p className="mt-2">
               <Link
@@ -81,6 +84,9 @@ export default function DaySheetView({
               <p>
                 At least one nozzle has no reading for {formatDate(yesterday)}, so the openings on this sheet are from
                 an earlier day. Enter {formatDate(yesterday)} first on the old Readings page, then come back here.
+              </p>
+              <p lang="ur" dir="rtl" className="mt-1">
+                کم از کم ایک نوزل کی {formatDate(yesterday)} کی ریڈنگ درج نہیں، اس لیے اس شیٹ کے سابقہ میٹر پرانے دن کے ہیں۔ پہلے {formatDate(yesterday)} کو پرانے ریڈنگ صفحے پر درج کریں، پھر یہاں آئیں۔
               </p>
               <p className="mt-2">
                 <Link
@@ -117,7 +123,14 @@ export default function DaySheetView({
               />
             }
             deliveryButton={<PurchaseForm tanks={purchaseTanks} suppliers={suppliers} defaultDate={date} />}
-            blocked={gap ? `${formatDate(yesterday)} is not fully entered yet, so the openings are wrong. Enter it first.` : null}
+            blocked={
+              gap
+                ? {
+                    en: `${formatDate(yesterday)} is not fully entered yet, so the openings are wrong. Enter it first.`,
+                    ur: `${formatDate(yesterday)} ابھی مکمل درج نہیں، اس لیے سابقہ میٹر غلط ہیں۔ پہلے اسے درج کریں۔`,
+                  }
+                : null
+            }
           />
           </>
         )}
@@ -127,7 +140,8 @@ export default function DaySheetView({
         <p className="mt-6 text-sm text-ink-600">
           <Link href={`/admin/readings?date=${date}&classic=1`} className="underline underline-offset-2">
             Open the old Readings page for this day
-          </Link>
+          </Link>{' '}
+          <span lang="ur" dir="rtl">اس دن کا پرانا ریڈنگ صفحہ کھولیں</span>
         </p>
       ) : null}
     </>

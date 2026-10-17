@@ -49,11 +49,11 @@ import NumberInput from '@/app/_components/ui/NumberInput';
 // server and in the browser, or React reports a mismatch); a line added by hand
 // takes the next number, which only ever happens in the browser.
 let addedKey = 1;
-const blank = () => ({ key: `a${addedKey++}`, who: '', amount: '' });
+const blank = () => ({ key: `a${addedKey++}`, who: '', amount: '', cash: false });
 
 const toRows = (list, field) =>
   Array.isArray(list) && list.length
-    ? list.map((line, index) => ({ key: `s${index}`, who: line[field] ?? '', amount: String(line.amount ?? '') }))
+    ? list.map((line, index) => ({ key: `s${index}`, who: line[field] ?? '', amount: String(line.amount ?? ''), cash: Boolean(line.cash) }))
     : [];
 
 const num = (value) => {
@@ -70,6 +70,29 @@ const FUEL_NAME = {
   diesel: { en: 'Diesel', ur: 'ڈیزل' },
 };
 const fuelName = (fuel) => FUEL_NAME[fuel] ?? { en: fuel, ur: '' };
+
+/** Urdu text, in the Urdu face, reading right to left. */
+function Ur({ children, className = '' }) {
+  return (
+    <span lang="ur" dir="rtl" className={className}>
+      {children}
+    </span>
+  );
+}
+
+/** A hint: the Urdu line first (the language he reads), the English under it, smaller. */
+function Hint({ en, ur, className = '' }) {
+  return (
+    <div className={`text-sm text-ink-600 ${className}`}>
+      {ur ? (
+        <p lang="ur" dir="rtl" className="text-base leading-relaxed text-ink-800">
+          {ur}
+        </p>
+      ) : null}
+      <p className={ur ? 'mt-0.5 text-xs' : ''}>{en}</p>
+    </div>
+  );
+}
 
 /** A caption in English with the register's Urdu beside it. */
 function Caption({ en, ur }) {
@@ -88,13 +111,13 @@ function Caption({ en, ur }) {
   );
 }
 
-function Box({ en, ur, hint, children, className = '' }) {
+function Box({ en, ur, hint, hintUr, children, className = '' }) {
   return (
     <section data-card className={`panel @container p-4 sm:p-5 ${className}`}>
       <h2 className="text-lg font-bold tracking-tight text-ink-900">
         <Caption en={en} ur={ur} />
       </h2>
-      {hint ? <p className="mt-0.5 text-sm text-ink-600">{hint}</p> : null}
+      {hint ? <Hint en={hint} ur={hintUr} className="mt-0.5" /> : null}
       <div className="mt-3">{children}</div>
     </section>
   );
@@ -173,9 +196,12 @@ export default function DaySheetForm({
           sale: sold && rate ? saleAmount(litres, rate) : 0,
           problem:
             typed !== null && typed < opening
-              ? 'The current meter is lower than the previous. A meter cannot run backwards.'
+              ? {
+                  en: 'The current meter is lower than the previous. A meter cannot run backwards.',
+                  ur: 'موجودہ میٹر سابقہ سے کم ہے۔ میٹر الٹا نہیں چل سکتا۔',
+                }
               : sold && (!rate || rate <= 0)
-                ? `Type the ${n.fuel_type} rate in Daily sale.`
+                ? { en: `Type the ${n.fuel_type} rate in Daily sale.`, ur: 'روزانو فروخت میں ریٹ لکھیں۔' }
                 : null,
         };
       }),
@@ -254,23 +280,26 @@ export default function DaySheetForm({
   // ---- what stops a save -------------------------------------------------------
   const problems = [];
   if (blocked) problems.push(blocked);
-  for (const m of meters) if (m.problem) problems.push(`${m.label}: ${m.problem}`);
-  const partial = (rows, what, needsCustomer) => {
+  for (const m of meters) if (m.problem) problems.push({ en: `${m.label}: ${m.problem.en}`, ur: m.problem.ur });
+  const partial = (rows, what, urWhat, needsCustomer) => {
     for (const row of rows) {
       const hasAmount = (num(row.amount) ?? 0) > 0;
       const hasWho = String(row.who).trim() !== '';
       if (hasAmount !== hasWho && (hasAmount || hasWho)) {
-        problems.push(`${what}: a line has ${needsCustomer ? 'a customer' : 'a name'} or an amount but not both.`);
+        problems.push({
+          en: `${what}: a line has ${needsCustomer ? 'a customer' : 'a name'} or an amount but not both.`,
+          ur: `${urWhat}: ایک لائن میں ${needsCustomer ? 'گاہک' : 'نام'} یا رقم ہے، دونوں نہیں۔`,
+        });
         break;
       }
     }
   };
-  partial(credit, 'Udhaar', true);
-  partial(received, 'Wasool', true);
-  partial(local, 'Local udhaar', false);
-  partial(pump, 'Pump expenses', false);
-  partial(house, 'House expenses', false);
-  if ((num(bankAmount) ?? 0) > 0 && !bankAccount) problems.push('Choose the bank account the cash went to.');
+  partial(credit, 'Udhaar', 'ادھار', true);
+  partial(received, 'Wasool', 'وصولی', true);
+  partial(local, 'Local udhaar', 'لوکل ادھار', false);
+  partial(pump, 'Pump expenses', 'پمپ خرچ', false);
+  partial(house, 'House expenses', 'گھر خرچ', false);
+  if ((num(bankAmount) ?? 0) > 0 && !bankAccount) problems.push({ en: 'Choose the bank account the cash went to.', ur: 'وہ بینک اکاؤنٹ چنیں جس میں رقم گئی۔' });
 
   // ---- the JSON the database takes ---------------------------------------------
   const complete = (rows) => rows.filter((r) => String(r.who).trim() !== '' && (num(r.amount) ?? 0) > 0);
@@ -282,7 +311,7 @@ export default function DaySheetForm({
       rate: m.rate ?? 0,
     })),
     fillers: fillers.trim(),
-    credit: complete(credit).map((r) => ({ customer_id: r.who, amount: num(r.amount) })),
+    credit: complete(credit).map((r) => ({ customer_id: r.who, amount: num(r.amount), cash: Boolean(r.cash) })),
     received: complete(received).map((r) => ({ customer_id: r.who, amount: num(r.amount) })),
     local: complete(local).map((r) => ({ name: r.who.trim(), amount: num(r.amount) })),
     pump: complete(pump).map((r) => ({ name: r.who.trim(), amount: num(r.amount) })),
@@ -313,16 +342,21 @@ export default function DaySheetForm({
   return (
     <div className="space-y-4">
       {savedTime ? (
-        <p className="callout">
-          This day was saved on {savedTime}. You can change anything below and save it again: only what you changed is
-          corrected.
-        </p>
+        <div className="callout">
+          <p>
+            This day was saved on {savedTime}. You can change anything below and save it again: only what you changed is
+            corrected.
+          </p>
+          <p lang="ur" dir="rtl" className="mt-1 text-base">
+            یہ دن پہلے محفوظ ہو چکا ہے۔ آپ نیچے کچھ بھی بدل کر دوبارہ محفوظ کر سکتے ہیں، صرف بدلی ہوئی چیز درست ہوگی۔
+          </p>
+        </div>
       ) : null}
 
-      <p className="text-sm text-ink-600">
-        This page is your register, box for box. Fill it in the way you write the register, then press Check and save the
-        day at the bottom.
-      </p>
+      <Hint
+        en="This page is your register, box for box. Fill it in the way you write the register, then press Check and save the day at the bottom."
+        ur="یہ صفحہ آپ کا رجسٹر ہے، خانہ بہ خانہ۔ جیسے رجسٹر میں لکھتے ہیں ویسے لکھیں، پھر سب سے نیچے &quot;چیک کریں اور دن محفوظ کریں&quot; دبائیں۔"
+      />
 
       {/* ============================ THE FRONT PAGE ================================= */}
 
@@ -333,7 +367,7 @@ export default function DaySheetForm({
           const fuelTanks = tanks.filter((t) => t.fuel_type === fuel);
           let totalLitres = 0;
           return (
-            <Box key={fuel} en={`Dip, ${name.en}`} ur={`ڈپ ${name.ur}`} hint="The dip of the tank at the closing.">
+            <Box key={fuel} en={`Dip, ${name.en}`} ur={`ڈپ ${name.ur}`} hint="The dip of the tank at the closing." hintUr="بند کرتے وقت ٹینک کی ڈپ۔">
               <ul className="divide-y divide-ink-200 rounded-xl border border-ink-200">
                 {fuelTanks.map((tank) => {
                   const dip = dipOf(tank.id);
@@ -342,7 +376,7 @@ export default function DaySheetForm({
                     <li key={tank.id} className="flex flex-wrap items-baseline justify-between gap-x-3 px-3 py-2">
                       <span className="text-base text-ink-800">{tank.name}</span>
                       <span className="tabular whitespace-nowrap text-base font-semibold text-ink-900">
-                        {dip ? `${Number(dip.mm).toLocaleString('en-US')} mm · ${litresText(dip.litres)} L` : 'Not dipped yet'}
+                        {dip ? `${Number(dip.mm).toLocaleString('en-US')} mm · ${litresText(dip.litres)} L` : <span>Not dipped yet <Ur>ابھی ڈپ نہیں لی</Ur></span>}
                       </span>
                     </li>
                   );
@@ -371,6 +405,7 @@ export default function DaySheetForm({
               en={`Meters, ${name.en}`}
               ur={name.ur}
               hint="Type the current meter of each nozzle. Previous is yesterday's current. A blank nozzle did not sell."
+              hintUr="ہر نوزل کی موجودہ ریڈنگ لکھیں۔ سابقہ کل کی موجودہ ہے۔ جو نوزل نہیں چلی اسے خالی چھوڑ دیں۔"
             >
               <ul className="space-y-3">
                 {group.rows.map((m) => (
@@ -405,10 +440,15 @@ export default function DaySheetForm({
                         <Caption en="Sale" ur="سیل" />
                       </span>
                       <span className="tabular whitespace-nowrap text-lg font-bold text-ink-900">
-                        {m.sold ? `${litresText(m.litres)} L` : 'No sale'}
+                        {m.sold ? `${litresText(m.litres)} L` : <span>No sale <Ur>فروخت نہیں</Ur></span>}
                       </span>
                     </p>
-                    {m.problem ? <p className="callout-warn mt-2">{m.problem}</p> : null}
+                    {m.problem ? (
+                      <div className="callout-warn mt-2">
+                        <p>{m.problem.en}</p>
+                        <p lang="ur" dir="rtl" className="mt-0.5">{m.problem.ur}</p>
+                      </div>
+                    ) : null}
                   </li>
                 ))}
               </ul>
@@ -428,9 +468,24 @@ export default function DaySheetForm({
         en="Stock position"
         ur="اسٹاک پوزیشن"
         hint="Worked out for you: stock, plus purchase, less sale. The balance is what the books say; the dip above is what the rod says."
+        hintUr="خود بخود نکلتا ہے: اسٹاک جمع خرید، منفی فروخت۔ بقایا کتاب کے مطابق ہے، اوپر کی ڈپ ناپ کے مطابق۔"
       >
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[34rem] text-start text-base">
+        <ul className="space-y-3 @[40rem]:hidden">
+          {stock.map((row) => (
+            <li key={row.id} className="rounded-2xl border border-ink-200 p-3">
+              <p className="mb-2 text-base font-bold text-ink-900">{row.name}</p>
+              <dl className="grid gap-1.5">
+                <Figure label={<Caption en="Stock" ur="موجودہ اسٹاک" />} value={row.opening === null ? '-' : `${litresText(row.opening)} L`} />
+                <Figure label={<Caption en="Purchase" ur="خرید" />} value={`${litresText(row.bought)} L`} />
+                <Figure label={<Caption en="Total" ur="ٹوٹل" />} value={row.total === null ? '-' : `${litresText(row.total)} L`} />
+                <Figure label={<Caption en="Sale" ur="فروخت" />} value={`${litresText(row.sold)} L`} />
+                <Figure label={<Caption en="Balance" ur="بقایا اسٹاک" />} value={row.balance === null ? '-' : `${litresText(row.balance)} L`} strong />
+              </dl>
+            </li>
+          ))}
+        </ul>
+        <div className="hidden @[40rem]:block">
+          <table className="w-full text-start text-base">
             <thead>
               <tr className="border-b border-ink-200 text-sm text-ink-600">
                 <th className="py-2 pe-3 text-start font-semibold">Tank</th>
@@ -475,14 +530,20 @@ export default function DaySheetForm({
           en="Recovery"
           ur="وصولی"
           hint="Money a customer PAID BACK today. Not fuel and not cash given out."
+          hintUr="جو رقم گاہک نے آج واپس دی۔ تیل نہیں، اور دی ہوئی نقد رقم نہیں۔"
           rows={received}
           setRows={setReceived}
           customers={customers}
           total={totals.receivedTotal}
-          totalLabel="Wasool total"
+          totalLabel="Wasool total / وصولی کا ٹوٹل"
           idPrefix="received"
         />
-        <Box en="Daily sale" ur="روزانو فروخت" hint="Type the day's rate for each fuel. Litres and amount are worked out.">
+        <Box
+          en="Daily sale"
+          ur="روزانو فروخت"
+          hint="Type the day's rate for each fuel. Litres and amount are worked out."
+          hintUr="ہر تیل کا آج کا ریٹ لکھیں۔ لیٹر اور رقم خود نکل آتے ہیں۔"
+        >
           <ul className="space-y-3">
             {byFuel.map((group) => {
               const name = fuelName(group.fuel);
@@ -491,7 +552,7 @@ export default function DaySheetForm({
                   <p className="mb-2 text-base font-semibold text-ink-900">
                     <Caption en={name.en} ur={name.ur} />
                   </p>
-                  <div className="grid grid-cols-1 gap-3 @[24rem]:grid-cols-3">
+                  <div className="grid grid-cols-2 gap-3 @[28rem]:grid-cols-3">
                     <div>
                       <label className="label" htmlFor={`rate-${group.fuel}`}>
                         <Caption en="Rate" ur="ریٹ" />
@@ -511,7 +572,7 @@ export default function DaySheetForm({
                       </p>
                       <p className="tabular input-number bg-ink-50 text-ink-900">{litresText(group.litres)}</p>
                     </div>
-                    <div>
+                    <div className="col-span-2 @[28rem]:col-span-1">
                       <p className="label">
                         <Caption en="Amount" ur="رقم" />
                       </p>
@@ -528,9 +589,11 @@ export default function DaySheetForm({
             <Figure label={<Caption en="Total litres" ur="ٹوٹل لیٹر" />} value={`${litresText(totals.dayLitres)} L`} />
             <Figure label={<Caption en="Total amount" ur="ٹوٹل رقم" />} value={rupees(totals.sales)} strong />
           </dl>
-          <p className="mt-2 text-sm text-ink-600">
-            A rate that is not today's rate is saved as the new price from this day, as under Settings.
-          </p>
+          <Hint
+            className="mt-2"
+            en="A rate that is not today's rate is saved as the new price from this day, as under Settings."
+            ur="اگر ریٹ آج کے ریٹ سے الگ ہو تو وہ اسی دن سے نیا ریٹ بن جاتا ہے، جیسے سیٹنگ میں۔"
+          />
         </Box>
       </div>
 
@@ -556,7 +619,7 @@ export default function DaySheetForm({
               className="input"
               value={fillers}
               onChange={(event) => setFillers(event.target.value)}
-              placeholder="Names, if you write them"
+              placeholder="Names / نام"
             />
           </div>
         </div>
@@ -567,9 +630,10 @@ export default function DaySheetForm({
         en="Invoice detail"
         ur="تفصیل انوائس"
         hint="Fuel that came in today: tank, litres, invoice number. Add a delivery here; it is saved on its own and shows up in Stock position."
+        hintUr="آج جو تیل آیا: ٹینک، لیٹر، انوائس نمبر۔ ڈیلیوری یہیں لکھیں، وہ الگ محفوظ ہوتی ہے اور اسٹاک پوزیشن میں آ جاتی ہے۔"
       >
         {deliveries.length === 0 ? (
-          <p className="text-base text-ink-600">No delivery entered for this day.</p>
+          <p className="text-base text-ink-600">No delivery entered for this day. <Ur>آج کی کوئی ڈیلیوری درج نہیں۔</Ur></p>
         ) : (
           <ul className="divide-y divide-ink-200 rounded-xl border border-ink-200">
             {deliveries.map((d) => (
@@ -586,7 +650,12 @@ export default function DaySheetForm({
             ))}
           </ul>
         )}
-        {deliveryButton ? <div className="mt-3">{deliveryButton}</div> : null}
+        {deliveryButton ? (
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            {deliveryButton}
+            <Ur className="text-base text-ink-600">ڈیلیوری درج کریں</Ur>
+          </div>
+        ) : null}
       </Box>
 
       {/* ---- UDHAAR and LOCAL UDHAAR | PUMP and HOUSE EXPENSES ------------------------- */}
@@ -595,22 +664,25 @@ export default function DaySheetForm({
           <CustomerList
             en="Udhaar"
             ur="تفصیل ادھار"
-            hint="Fuel or cash given to a customer, paid later. Customer and amount, as in the register."
+            hint="Fuel or cash given to a customer, paid later. Customer and amount, as in the register. Tick Cash for money handed over, not fuel."
+            hintUr="گاہک کو تیل یا نقد رقم دی، پیسے بعد میں۔ رجسٹر کی طرح گاہک اور رقم لکھیں۔ رقم نقد دی ہو تو &quot;نقد رقم، تیل نہیں&quot; پر نشان لگائیں۔"
+            cashTick
             rows={credit}
             setRows={setCredit}
             customers={customers}
             total={totals.creditTotal}
-            totalLabel="Udhaar total"
+            totalLabel="Udhaar total / ادھار کا ٹوٹل"
             idPrefix="credit"
           />
           <TextList
             en="Local udhaar"
             ur="لوکل ادھار"
             hint="Saved as local expenses, never on a customer."
+            hintUr="صرف لوکل خرچ کے طور پر محفوظ ہوتا ہے، گاہک کے نام پر کبھی نہیں۔"
             rows={local}
             setRows={setLocal}
             total={totals.localTotal}
-            placeholder="Name, e.g. Ayaz Jamali"
+            placeholder="Name / نام, e.g. Ayaz Jamali"
             idPrefix="local"
           />
         </div>
@@ -619,31 +691,38 @@ export default function DaySheetForm({
             en="Pump expenses"
             ur="پمپ خرچ"
             hint="One line for each thing: ice, lunch, petrol for recovery. Never a total."
+            hintUr="ہر چیز کی الگ لائن: برف، لنچ، ریکوری کا پٹرول۔ ٹوٹل کبھی نہ لکھیں۔"
             rows={pump}
             setRows={setPump}
             total={totals.pumpTotal}
-            placeholder="What for, e.g. Baraf"
+            placeholder="What for / کس لیے, e.g. Baraf"
             idPrefix="pump"
           />
           <TextList
             en="House expenses"
             ur="گھر خرچ"
             hint="One line for each thing, as above."
+            hintUr="ہر چیز کی الگ لائن، اوپر کی طرح۔"
             rows={house}
             setRows={setHouse}
             total={totals.houseTotal}
-            placeholder="What for, e.g. Sabzi"
+            placeholder="What for / کس لیے, e.g. Sabzi"
             idPrefix="house"
           />
         </div>
       </div>
 
       {/* ---- BANK AND CASH -------------------------------------------------------------- */}
-      <Box en="Bank and cash" ur="بینک" hint="Cash taken to the bank today, and the cash you counted that is left.">
+      <Box
+        en="Bank and cash"
+        ur="بینک"
+        hint="Cash taken to the bank today, and the cash you counted that is left."
+        hintUr="آج بینک میں جمع کروائی گئی نقد رقم، اور گنی ہوئی بقایا نقد رقم۔"
+      >
         <div className="grid gap-3 sm:grid-cols-3">
           <div>
             <label className="label" htmlFor="sheet-bank-account">
-              Bank account
+              <Caption en="Bank account" ur="بینک اکاؤنٹ" />
             </label>
             <select
               id="sheet-bank-account"
@@ -661,7 +740,7 @@ export default function DaySheetForm({
           </div>
           <div>
             <label className="label" htmlFor="sheet-bank-amount">
-              Cash taken to the bank
+              <Caption en="Cash taken to the bank" ur="بینک میں جمع کی گئی رقم" />
             </label>
             <NumberInput
               id="sheet-bank-amount"
@@ -675,7 +754,7 @@ export default function DaySheetForm({
           </div>
           <div>
             <label className="label" htmlFor="sheet-counted">
-              <Caption en="Cash counted (what is left)" ur="بقایا" />
+              <Caption en="Cash counted (what is left)" ur="گنی ہوئی بقایا رقم" />
             </label>
             <NumberInput
               id="sheet-counted"
@@ -691,30 +770,40 @@ export default function DaySheetForm({
       </Box>
 
       {/* ---- THE DAY'S ARITHMETIC (تفصیل خرچ) -------------------------------------------- */}
-      <Box en="The day" ur="کل حساب" hint="Your register's own arithmetic. Check it against the bottom of the paper before you save.">
+      <Box
+        en="The day"
+        ur="کل حساب"
+        hint="Your register's own arithmetic. Check it against the bottom of the paper before you save."
+        hintUr="آپ کے رجسٹر کا اپنا حساب۔ محفوظ کرنے سے پہلے کاغذ کے نیچے والے حساب سے ملا لیں۔"
+      >
         <dl className="grid gap-2 sm:grid-cols-2">
           <Figure label={<Caption en="Sale" ur="سیل" />} value={rupees(totals.sales)} />
           <Figure label={<Caption en="+ Wasool" ur="وصولی" />} value={rupees(totals.receivedTotal)} />
-          <Figure label={<Caption en="- Udhaar" ur="کھاتہ" />} value={rupees(totals.creditTotal)} />
-          <Figure label="- Expenses (local, pump, house)" value={rupees(totals.expenses)} />
+          <Figure label={<Caption en="- Udhaar" ur="کھاتہ (ادھار)" />} value={rupees(totals.creditTotal)} />
+          <Figure label={<Caption en="- Expenses (local, pump, house)" ur="خرچ (لوکل، پمپ، گھر)" />} value={rupees(totals.expenses)} />
           <Figure label={<Caption en="- Cash to the bank" ur="بینک" />} value={rupees(totals.bankTotal)} />
-          <Figure label="= Cash from today" value={rupees(totals.cash)} strong />
-          <Figure label="Cash counted" value={totals.countedTotal === null ? 'Not typed' : rupees(totals.countedTotal)} />
+          <Figure label={<Caption en="= Cash from today" ur="آج کی نقد رقم" />} value={rupees(totals.cash)} strong />
+          <Figure label={<Caption en="Cash counted" ur="گنی ہوئی رقم" />} value={totals.countedTotal === null ? 'Not typed' : rupees(totals.countedTotal)} />
           <Figure
-            label="Counted minus cash from today"
+            label={<Caption en="Counted minus cash from today" ur="فرق" />}
             value={totals.difference === null ? '-' : rupees(totals.difference)}
             strong
           />
         </dl>
-        <p className="mt-3 text-sm text-ink-600">
-          A difference is the cash of earlier days (if the counted cash is more) or cash that is short (if it is less).
-          It does not stop you saving.
-        </p>
+        <Hint
+          className="mt-3"
+          en="A difference is the cash of earlier days (if the counted cash is more) or cash that is short (if it is less). It does not stop you saving."
+          ur="فرق پچھلے دنوں کی نقد رقم ہے (اگر گنی ہوئی رقم زیادہ ہو) یا کمی ہے (اگر کم ہو)۔ یہ محفوظ کرنے سے نہیں روکتا۔"
+        />
 
         {problems.length > 0 ? (
           <ul className="callout-warn mt-4 list-disc ps-6">
             {problems.map((problem) => (
-              <li key={problem}>{problem}</li>
+              <li key={problem.en}>
+                {problem.en}
+                <br />
+                <Ur>{problem.ur}</Ur>
+              </li>
             ))}
           </ul>
         ) : null}
@@ -723,7 +812,9 @@ export default function DaySheetForm({
 
         <div className="mt-4 flex gap-2 border-t border-ink-200 pt-4">
           <Button variant="primary" type="button" disabled={problems.length > 0} onClick={() => setConfirming(true)} className="flex-1">
-            Check and save the day
+            <span>
+              Check and save the day <Ur>چیک کریں اور دن محفوظ کریں</Ur>
+            </span>
           </Button>
         </div>
       </Box>
@@ -732,8 +823,12 @@ export default function DaySheetForm({
       <Dialog
         open={confirming}
         onClose={() => setConfirming(false)}
-        title={`Save ${dateLabel}?`}
-        subtitle={<span className="text-sm text-ink-600">Look at every nozzle before you say yes.</span>}
+        title={<Caption en={`Save ${dateLabel}?`} ur="دن محفوظ کریں؟" />}
+        subtitle={
+          <span className="text-sm text-ink-600">
+            Look at every nozzle before you say yes. <Ur>ہاں کہنے سے پہلے ہر نوزل دیکھ لیں۔</Ur>
+          </span>
+        }
       >
         <form action={formAction} className="space-y-4 p-5">
           <input type="hidden" name="sheet_date" value={date} />
@@ -744,29 +839,40 @@ export default function DaySheetForm({
               <li key={m.nozzle_id} className="flex items-baseline justify-between gap-3 px-3 py-2">
                 <span className="text-base text-ink-800">{m.label}</span>
                 <span className={m.sold ? 'tabular whitespace-nowrap font-semibold text-ink-900' : 'text-ink-600'}>
-                  {m.sold ? `${litresText(m.litres)} L · ${rupees(m.sale)}` : 'No sale'}
+                  {m.sold ? `${litresText(m.litres)} L · ${rupees(m.sale)}` : <span>No sale <Ur>فروخت نہیں</Ur></span>}
                 </span>
               </li>
             ))}
           </ul>
 
           <dl className="grid gap-1 text-base">
-            <Figure label="Sale" value={rupees(totals.sales)} />
-            <Figure label="Udhaar" value={`${credit.filter((r) => (num(r.amount) ?? 0) > 0).length} lines, ${rupees(totals.creditTotal)}`} />
-            <Figure label="Wasool" value={`${received.filter((r) => (num(r.amount) ?? 0) > 0).length} lines, ${rupees(totals.receivedTotal)}`} />
-            <Figure label="Expenses" value={rupees(totals.expenses)} />
-            <Figure label="Cash to the bank" value={rupees(totals.bankTotal)} />
-            <Figure label="Cash counted" value={totals.countedTotal === null ? 'Not typed' : rupees(totals.countedTotal)} />
+            <Figure label={<Caption en="Sale" ur="سیل" />} value={rupees(totals.sales)} />
+            <Figure
+              label={<Caption en="Udhaar" ur="ادھار" />}
+              value={`${credit.filter((r) => (num(r.amount) ?? 0) > 0).length} lines${
+                credit.some((r) => r.cash && (num(r.amount) ?? 0) > 0)
+                  ? ` (${credit.filter((r) => r.cash && (num(r.amount) ?? 0) > 0).length} cash)`
+                  : ''
+              }, ${rupees(totals.creditTotal)}`}
+            />
+            <Figure label={<Caption en="Wasool" ur="وصولی" />} value={`${received.filter((r) => (num(r.amount) ?? 0) > 0).length} lines, ${rupees(totals.receivedTotal)}`} />
+            <Figure label={<Caption en="Expenses" ur="خرچ" />} value={rupees(totals.expenses)} />
+            <Figure label={<Caption en="Cash to the bank" ur="بینک" />} value={rupees(totals.bankTotal)} />
+            <Figure label={<Caption en="Cash counted" ur="گنی ہوئی رقم" />} value={totals.countedTotal === null ? 'Not typed' : rupees(totals.countedTotal)} />
           </dl>
 
           <FormMessage state={state?.ok === false ? state : null} />
 
           <div className="flex gap-2 border-t border-ink-200 pt-4">
             <SubmitButton className="flex-1" pendingLabel="Saving the day…">
-              Yes, save the day
+              <span>
+                Yes, save the day <Ur>جی ہاں، دن محفوظ کریں</Ur>
+              </span>
             </SubmitButton>
             <Button variant="secondary" type="button" onClick={() => setConfirming(false)}>
-              Go back
+              <span>
+                Go back <Ur>واپس</Ur>
+              </span>
             </Button>
           </div>
         </form>
@@ -791,22 +897,22 @@ const removeButton = (onClick) => (
     type="button"
     onClick={onClick}
     aria-label="Remove this line"
-    className="mb-1 inline-flex h-10 w-10 items-center justify-center rounded-lg text-red-700 hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
+    className="mb-1 inline-flex h-11 w-11 items-center justify-center rounded-lg text-red-700 hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
   >
     <Icon name="trash" className="h-5 w-5" />
   </button>
 );
 
-function CustomerList({ en, ur, hint, rows, setRows, customers, total, totalLabel, idPrefix }) {
+function CustomerList({ en, ur, hint, hintUr, rows, setRows, customers, total, totalLabel, idPrefix, cashTick = false }) {
   const update = (key, patch) => setRows(rows.map((row) => (row.key === key ? { ...row, ...patch } : row)));
   return (
-    <Box en={en} ur={ur} hint={hint}>
+    <Box en={en} ur={ur} hint={hint} hintUr={hintUr}>
       <ul className="space-y-2">
         {rows.map((row, index) => (
           <li key={row.key} className="flex flex-wrap items-end gap-2">
             <div className="min-w-0 basis-full sm:basis-0 sm:flex-1">
               <label className="label" htmlFor={`${idPrefix}-who-${row.key}`}>
-                {index === 0 ? 'Customer' : <span className="sr-only">Customer</span>}
+                {index === 0 ? <Caption en="Customer" ur="گاہک" /> : <span className="sr-only">Customer</span>}
               </label>
               <select
                 id={`${idPrefix}-who-${row.key}`}
@@ -814,7 +920,7 @@ function CustomerList({ en, ur, hint, rows, setRows, customers, total, totalLabe
                 value={row.who}
                 onChange={(event) => update(row.key, { who: event.target.value })}
               >
-                <option value="">Choose the customer</option>
+                <option value="">Choose the customer / گاہک چنیں</option>
                 {customers.map((customer) => (
                   <option key={customer.id} value={customer.id}>
                     {customerLabel(customer)}
@@ -837,12 +943,29 @@ function CustomerList({ en, ur, hint, rows, setRows, customers, total, totalLabe
               />
             </div>
             {removeButton(() => setRows(rows.filter((r) => r.key !== row.key)))}
+            {cashTick ? (
+              <label
+                className="flex min-h-11 basis-full items-center gap-3 rounded-lg bg-ink-50 px-3 text-base text-ink-800"
+                htmlFor={`${idPrefix}-cash-${row.key}`}
+              >
+                <input
+                  id={`${idPrefix}-cash-${row.key}`}
+                  type="checkbox"
+                  className="h-6 w-6 shrink-0"
+                  checked={Boolean(row.cash)}
+                  onChange={(event) => update(row.key, { cash: event.target.checked })}
+                />
+                <span>
+                  Cash, not fuel <Ur>نقد رقم، تیل نہیں</Ur>
+                </span>
+              </label>
+            ) : null}
           </li>
         ))}
       </ul>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
         <Button variant="secondary" type="button" onClick={() => setRows([...rows, blank()])}>
-          + Add a customer
+          + Add a customer · گاہک شامل کریں
         </Button>
         <p className="text-base text-ink-700">
           {totalLabel}: <span className="tabular font-bold text-ink-900">{formatPKR(total)}</span>
@@ -852,10 +975,10 @@ function CustomerList({ en, ur, hint, rows, setRows, customers, total, totalLabe
   );
 }
 
-function TextList({ en, ur, hint, rows, setRows, total, placeholder, idPrefix }) {
+function TextList({ en, ur, hint, hintUr, rows, setRows, total, placeholder, idPrefix }) {
   const update = (key, patch) => setRows(rows.map((row) => (row.key === key ? { ...row, ...patch } : row)));
   return (
-    <Box en={en} ur={ur} hint={hint}>
+    <Box en={en} ur={ur} hint={hint} hintUr={hintUr}>
       <ul className="space-y-2">
         {rows.map((row, index) => (
           <li key={row.key} className="flex flex-wrap items-end gap-2">
@@ -893,10 +1016,10 @@ function TextList({ en, ur, hint, rows, setRows, total, placeholder, idPrefix })
       </ul>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
         <Button variant="secondary" type="button" onClick={() => setRows([...rows, blank()])}>
-          + Add a line
+          + Add a line · لائن شامل کریں
         </Button>
         <p className="text-base text-ink-700">
-          Total: <span className="tabular font-bold text-ink-900">{formatPKR(total)}</span>
+          Total <Ur>ٹوٹل</Ur>: <span className="tabular font-bold text-ink-900">{formatPKR(total)}</span>
         </p>
       </div>
     </Box>
