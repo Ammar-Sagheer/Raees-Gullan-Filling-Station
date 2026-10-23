@@ -103,20 +103,23 @@ const LINKS = [
   // Last, and open to both roles - the person most likely to need it is a new
   // member of staff on their first evening, not the owner.
   //
-  // `prefetch` is set on this one alone. Measured on a production build, it
+  // `prefetch` is on for this one alone. Measured on a production build, it
   // takes the navigation from 874ms with a loading skeleton to 70ms with none
   // at all - and the guide is the only section where it is free of any
   // consequence, because its content is a compile-time constant in
   // guide-content.js. There is no query to run early and nothing that can go
   // stale between the prefetch and the click.
   //
-  // NOT DONE FOR THE OTHER TEN, and the reason is cost rather than staleness.
-  // App Router prefetches when a link enters the viewport, and the whole
-  // sidebar is in the viewport on a laptop - so prefetching all of them would
-  // run ten full page renders, with their queries, on every single admin page
-  // view. On a cheap tablet over mobile data those ten requests compete with
-  // the page the reader is actually waiting for, which is the opposite of the
-  // intent.
+  // EVERY OTHER LINK SETS prefetch={false} (sectionLink below), and the reason
+  // is cost rather than staleness. Leaving the prop unset is not "off": the App
+  // Router still prefetches a cut-down copy of each dynamic page (down to its
+  // loading.js) as soon as the link enters the viewport, and the whole sidebar
+  // is in the viewport on a laptop. Watched on Vista in October 2026, each page
+  // opened set off about 15 background server renders, one per sidebar link,
+  // and that multiplier was most of every pump's Vercel CPU and invocations.
+  // On a cheap tablet over mobile data those requests also compete with the
+  // page the reader is actually waiting for. Off, a click shows the loading
+  // skeleton for a moment and the page is drawn fresh.
   {
     href: '/admin/guide',
     label: 'nav.guide',
@@ -286,7 +289,7 @@ export default function AdminSidebar({ profile }) {
       <li key={link.href}>
         <PendingLink
           href={link.href}
-          prefetch={link.prefetch ?? undefined}
+          prefetch={link.prefetch ?? false}
           aria-current={active ? 'page' : undefined}
           className={rowClass(active)}
         >

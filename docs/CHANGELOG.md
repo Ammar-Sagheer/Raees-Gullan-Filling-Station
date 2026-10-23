@@ -11,6 +11,18 @@ stock is calculated) see `README.md`. For the reusable patterns these
 entries establish (dialogs, table layout, buttons) see
 `docs/UI_CONVENTIONS.md`.
 
+## Sidebar links no longer prefetch (23 Oct 2026)
+
+Every sidebar link but the Guide now passes `prefetch={false}` (`AdminSidebar.js`, `sectionLink`). The old
+comment said the other links did not prefetch, but leaving the prop unset is the App Router's default ("auto"),
+which still prefetches a cut-down copy of each dynamic page, down to its `loading.js`, whenever the link is on
+screen, and the whole sidebar is on screen on a laptop or tablet. Watched while signed in on Vista, each page
+opened set off about 15 background server renders, one per link. Across the pumps that was most of the Vercel
+account's Fluid Active CPU and function invocations (433K in 30 days, 3h of the Hobby plan's 4h of CPU), so the
+change was made in the master (`e785a8b`) and carried here the same day. The cost is a moment of the loading skeleton on each
+click; no figure can change, since prefetching only decides when a page is drawn. The Guide keeps
+`prefetch: true`, as its content is a constant.
+
 ## The day sheet: the owner's register page as one form (091, 17 Oct 2026, Raees Gullan only)
 
 **Why.** Entering 2 to 16 Oct for Raees, the same three mistakes came back each day, because the app made him
